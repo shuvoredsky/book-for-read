@@ -1,4 +1,4 @@
-import { User, Mail, Shield, Calendar, AtSign, CheckCircle } from "lucide-react";
+import { Mail, Shield, Calendar, AtSign } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";

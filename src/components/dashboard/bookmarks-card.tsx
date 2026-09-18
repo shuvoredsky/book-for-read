@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bookmark, ArrowUpRight, BookOpen, AlertCircle } from "lucide-react";
+import { Bookmark, ArrowUpRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

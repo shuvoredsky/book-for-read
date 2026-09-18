@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookOpen, UserCheck, Shield, Sparkles, Home } from "lucide-react";
+import { UserCheck, Shield, Home } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { UserNav } from "@/components/layout/user-nav";

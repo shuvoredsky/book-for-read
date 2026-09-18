@@ -5,10 +5,20 @@ import * as pdfjsLib from "pdfjs-dist";
 import type { PDFDocumentProxy } from "pdfjs-dist";
 import { toast } from "sonner";
 import { getBookReadUrlAction } from "@/server/actions/reader";
+import {
+  getReadingProgressAction,
+  saveReadingProgressAction,
+} from "@/server/actions/progress";
+import {
+  getBookmarksAction,
+  createBookmarkAction,
+  deleteBookmarkAction,
+} from "@/server/actions/bookmark";
 import { ReaderToolbar } from "./reader-toolbar";
 import { PdfPage } from "./pdf-page";
 import { ReaderLoading } from "./reader-loading";
 import { ReaderError } from "./reader-error";
+import type { BookmarkItem } from "@/types";
 
 // Configure PDF.js Web Worker
 if (typeof window !== "undefined") {
@@ -36,6 +46,8 @@ export function PdfReader({
 }: PdfReaderProps) {
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const scrollAreaRef = React.useRef<HTMLDivElement | null>(null);
+  const saveTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+  const lastSavedPageRef = React.useRef<number>(initialPage);
 
   const [pdfDoc, setPdfDoc] = React.useState<PDFDocumentProxy | null>(null);
   const [currentPage, setCurrentPage] = React.useState<number>(
@@ -49,8 +61,12 @@ export function PdfReader({
   const [isExpired, setIsExpired] = React.useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = React.useState<boolean>(false);
 
-  // 1. Fetch authorized signed URL and initialize PDF Document
-  const loadPdfDocument = React.useCallback(
+  // Bookmark State
+  const [bookmarks, setBookmarks] = React.useState<BookmarkItem[]>([]);
+  const [isBookmarking, setIsBookmarking] = React.useState<boolean>(false);
+
+  // 1. Fetch saved progress, bookmarks, and signed URL in parallel
+  const initializeReader = React.useCallback(
     async (isRetry: boolean = false) => {
       setIsLoading(true);
       setError(null);
@@ -62,24 +78,41 @@ export function PdfReader({
       );
 
       try {
-        // Fetch presigned URL from existing verified server action
-        const actionResult = await getBookReadUrlAction(bookSlug);
+        // Fetch presigned URL, reading progress, and bookmarks in parallel
+        const [urlRes, progressRes, bookmarksRes] = await Promise.all([
+          getBookReadUrlAction(bookSlug),
+          getReadingProgressAction(bookSlug),
+          getBookmarksAction(bookSlug),
+        ]);
 
-        if (!actionResult.success || !actionResult.data) {
+        if (!urlRes.success || !urlRes.data) {
           setError(
-            actionResult.error || "বইয়ের এক্সেস নিশ্চিত করা যায়নি। অনুগ্রহ করে ড্যাশবোর্ড চেক করুন।"
+            urlRes.error || "বইয়ের এক্সেস নিশ্চিত করা যায়নি। অনুগ্রহ করে ড্যাশবোর্ড চেক করুন।"
           );
           setIsLoading(false);
           return;
         }
 
-        const signedUrl = actionResult.data.presignedUrl;
+        // Set bookmarks if available
+        if (bookmarksRes.success && bookmarksRes.data) {
+          setBookmarks(bookmarksRes.data);
+        }
 
-        // Initialize PDF.js Document Proxy
+        // Determine starting page: explicit initialPage > saved progress > 1
+        if (initialPage && initialPage > 1) {
+          setCurrentPage(initialPage);
+          lastSavedPageRef.current = initialPage;
+        } else if (progressRes.success && progressRes.data && progressRes.data.currentPage > 1) {
+          setCurrentPage(progressRes.data.currentPage);
+          lastSavedPageRef.current = progressRes.data.currentPage;
+        }
+
+        const signedUrl = urlRes.data.presignedUrl;
+
+        // Initialize PDF.js Document
         const loadingTask = pdfjsLib.getDocument({
           url: signedUrl,
           withCredentials: false,
-          // Support HTTP range requests for large 60MB PDF streaming
           disableAutoFetch: false,
           disableStream: false,
         });
@@ -104,7 +137,6 @@ export function PdfReader({
         console.error("[PdfReader Init Error]:", err);
         const errMessage = String(err);
 
-        // Detect expired signed URL or 403 Forbidden
         if (
           errMessage.includes("403") ||
           errMessage.includes("AccessDenied") ||
@@ -118,36 +150,161 @@ export function PdfReader({
         setIsLoading(false);
       }
     },
-    [bookSlug]
+    [bookSlug, initialPage]
   );
 
-  // Initial load
   React.useEffect(() => {
-    loadPdfDocument();
+    initializeReader();
 
     return () => {
-      // Clean up pdfDoc proxy on unmount
       if (pdfDoc) {
         pdfDoc.destroy().catch(() => {});
       }
     };
-  }, [loadPdfDocument]);
+  }, [initializeReader]);
 
-  // 2. Navigation Handler
+  // 2. Centralized Page Change Handler with Debounced Progress Auto-Save
   const handlePageChange = React.useCallback(
     (newPage: number) => {
       if (newPage < 1 || newPage > totalPages) return;
+
+      // Update UI state immediately
       setCurrentPage(newPage);
 
-      // Scroll viewport back to top of reader smoothly
+      // Scroll viewport back to top smoothly
       if (scrollAreaRef.current) {
         scrollAreaRef.current.scrollTo({ top: 0, behavior: "smooth" });
       }
+
+      // Clear any pending debounced save timer
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
+
+      // Schedule debounced server-side progress save (600ms)
+      saveTimerRef.current = setTimeout(async () => {
+        try {
+          lastSavedPageRef.current = newPage;
+          await saveReadingProgressAction({
+            bookSlug,
+            currentPage: newPage,
+            totalPages,
+          });
+        } catch (err) {
+          console.error("[Debounced Progress Save Error]:", err);
+        }
+      }, 600);
     },
-    [totalPages]
+    [bookSlug, totalPages]
   );
 
-  // 3. Zoom Handlers
+  // Flush pending progress save on unmount / navigation away
+  React.useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  // 3. Bookmark Management Handlers (Phase 13)
+  const isCurrentPageBookmarked = React.useMemo(() => {
+    return bookmarks.some((bm) => bm.pageNumber === currentPage);
+  }, [bookmarks, currentPage]);
+
+  const handleToggleBookmark = React.useCallback(async () => {
+    const existingBookmark = bookmarks.find((bm) => bm.pageNumber === currentPage);
+
+    if (existingBookmark) {
+      // Delete existing bookmark for current page
+      const previousBookmarks = [...bookmarks];
+      setBookmarks((prev) => prev.filter((bm) => bm.id !== existingBookmark.id));
+
+      try {
+        const res = await deleteBookmarkAction({ bookmarkId: existingBookmark.id });
+        if (!res.success) {
+          setBookmarks(previousBookmarks);
+          toast.error(res.error || "বুকমার্ক মুছতে সমস্যা হয়েছে");
+        } else {
+          toast.success(`পৃষ্ঠা ${currentPage} বুকমার্ক থেকে সরানো হয়েছে`);
+        }
+      } catch {
+        setBookmarks(previousBookmarks);
+        toast.error("সার্ভারে সমস্যা হয়েছে");
+      }
+    } else {
+      // Enforce 3 bookmark limit
+      if (bookmarks.length >= 3) {
+        toast.error("আপনি সর্বোচ্চ ৩টি bookmark রাখতে পারবেন।");
+        return;
+      }
+
+      setIsBookmarking(true);
+      const tempId = `temp-${Date.now()}`;
+      const optimisticBookmark: BookmarkItem = {
+        id: tempId,
+        pageNumber: currentPage,
+        label: `পৃষ্ঠা ${currentPage}`,
+        createdAt: new Date(),
+      };
+
+      setBookmarks((prev) => [...prev, optimisticBookmark]);
+
+      try {
+        const res = await createBookmarkAction({
+          bookSlug,
+          pageNumber: currentPage,
+          label: `পৃষ্ঠা ${currentPage}`,
+        });
+
+        if (!res.success || !res.data) {
+          setBookmarks((prev) => prev.filter((bm) => bm.id !== tempId));
+          toast.error(res.error || "বুকমার্ক যোগ করা সম্ভব হয়নি");
+        } else {
+          setBookmarks((prev) =>
+            prev.map((bm) => (bm.id === tempId ? res.data! : bm))
+          );
+          toast.success(res.message || `পৃষ্ঠা ${currentPage} বুকমার্ক করা হয়েছে!`);
+        }
+      } catch {
+        setBookmarks((prev) => prev.filter((bm) => bm.id !== tempId));
+        toast.error("সার্ভার ত্রুটি");
+      } finally {
+        setIsBookmarking(false);
+      }
+    }
+  }, [bookSlug, bookmarks, currentPage]);
+
+  const handleDeleteBookmark = React.useCallback(
+    async (bookmarkId: string) => {
+      const target = bookmarks.find((bm) => bm.id === bookmarkId);
+      const previousBookmarks = [...bookmarks];
+
+      setBookmarks((prev) => prev.filter((bm) => bm.id !== bookmarkId));
+
+      try {
+        const res = await deleteBookmarkAction({ bookmarkId });
+        if (!res.success) {
+          setBookmarks(previousBookmarks);
+          toast.error(res.error || "বুকমার্ক মুছতে ব্যর্থ হয়েছে");
+        } else {
+          toast.success(
+            target
+              ? `পৃষ্ঠা ${target.pageNumber} বুকমার্ক মোছা হয়েছে`
+              : "বুকমার্ক মুছে ফেলা হয়েছে"
+          );
+        }
+      } catch {
+        setBookmarks(previousBookmarks);
+        toast.error("সার্ভারের সাথে যোগাযোগে ত্রুটি ঘটেছে");
+      }
+    },
+    [bookmarks]
+  );
+
+  // 4. Zoom Handlers
   const handleZoomIn = React.useCallback(() => {
     setScale((prev) => Math.min(2.5, +(prev + 0.15).toFixed(2)));
   }, []);
@@ -162,14 +319,14 @@ export function PdfReader({
 
   const handleFitWidth = React.useCallback(() => {
     if (!scrollAreaRef.current) return;
-    const containerWidth = scrollAreaRef.current.clientWidth - 48; // padding consideration
-    const standardPageWidth = 600; // standard PDF pt width
+    const containerWidth = scrollAreaRef.current.clientWidth - 48;
+    const standardPageWidth = 600;
     const calculatedScale = Math.max(0.6, Math.min(2.0, +(containerWidth / standardPageWidth).toFixed(2)));
     setScale(calculatedScale);
     toast.success(`স্ক্রিন অনুযায়ী ফিট করা হয়েছে (${Math.round(calculatedScale * 100)}%)`);
   }, []);
 
-  // 4. Fullscreen API Toggle
+  // 5. Fullscreen API Toggle
   const handleToggleFullscreen = React.useCallback(async () => {
     if (!containerRef.current) return;
 
@@ -186,7 +343,6 @@ export function PdfReader({
     }
   }, []);
 
-  // Listen for external fullscreen changes (e.g. Escape key)
   React.useEffect(() => {
     const onFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement);
@@ -196,12 +352,15 @@ export function PdfReader({
     return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
   }, []);
 
-  // 5. Keyboard Navigation
+  // 6. Keyboard Navigation
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Do not hijack typing inside form inputs
       const activeTag = document.activeElement?.tagName?.toLowerCase();
-      if (activeTag === "input" || activeTag === "textarea" || (document.activeElement as HTMLElement)?.isContentEditable) {
+      if (
+        activeTag === "input" ||
+        activeTag === "textarea" ||
+        (document.activeElement as HTMLElement)?.isContentEditable
+      ) {
         return;
       }
 
@@ -220,12 +379,15 @@ export function PdfReader({
       } else if (e.key === "0" && e.ctrlKey) {
         e.preventDefault();
         handleResetZoom();
+      } else if ((e.key === "b" || e.key === "B") && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        handleToggleBookmark();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [currentPage, handlePageChange, handleZoomIn, handleZoomOut, handleResetZoom]);
+  }, [currentPage, handlePageChange, handleZoomIn, handleZoomOut, handleResetZoom, handleToggleBookmark]);
 
   return (
     <div
@@ -237,29 +399,32 @@ export function PdfReader({
       }`}
     >
       {/* 1. Loading State */}
-      {isLoading && (
-        <ReaderLoading message={loadingMessage} />
-      )}
+      {isLoading && <ReaderLoading message={loadingMessage} />}
 
       {/* 2. Error State */}
       {!isLoading && error && (
         <ReaderError
           message={error}
           isExpired={isExpired}
-          onRetry={() => loadPdfDocument(true)}
+          onRetry={() => initializeReader(true)}
         />
       )}
 
       {/* 3. Active PDF Canvas Reader */}
       {!isLoading && !error && pdfDoc && (
         <div className="w-full flex flex-col items-center space-y-4">
-          {/* Reader Top Navigation Toolbar (Phase 11) */}
+          {/* Reader Top Navigation & Bookmarks Toolbar (Phase 11 & 13) */}
           <ReaderToolbar
             currentPage={currentPage}
             totalPages={totalPages}
             scale={scale}
             isFullscreen={isFullscreen}
+            bookmarks={bookmarks}
+            isCurrentPageBookmarked={isCurrentPageBookmarked}
+            isBookmarking={isBookmarking}
             onPageChange={handlePageChange}
+            onToggleBookmark={handleToggleBookmark}
+            onDeleteBookmark={handleDeleteBookmark}
             onZoomIn={handleZoomIn}
             onZoomOut={handleZoomOut}
             onResetZoom={handleResetZoom}
@@ -290,7 +455,7 @@ export function PdfReader({
           {/* Bottom Quick Page Indicator for Mobile */}
           <div className="flex items-center justify-between w-full max-w-lg px-2 text-xs text-muted-foreground">
             <span className="font-mono">
-              কীবোর্ড শর্টকাট: <kbd className="px-1.5 py-0.5 rounded bg-muted border font-mono">←</kbd> / <kbd className="px-1.5 py-0.5 rounded bg-muted border font-mono">→</kbd>
+              শর্টকাট: <kbd className="px-1.5 py-0.5 rounded bg-muted border font-mono">←</kbd> / <kbd className="px-1.5 py-0.5 rounded bg-muted border font-mono">→</kbd> | বুকমার্ক: <kbd className="px-1.5 py-0.5 rounded bg-muted border font-mono">B</kbd>
             </span>
             <span className="font-mono text-primary font-semibold">
               পৃষ্ঠা {currentPage} / {totalPages}

@@ -27,7 +27,7 @@ export default async function ReaderPage({ params, searchParams }: ReaderPagePro
   const user = await requireAuth();
   const { bookSlug } = await params;
   const search = await searchParams;
-  const targetPage = search.page ? parseInt(search.page, 10) : 1;
+  const targetPage = search.page ? parseInt(search.page, 10) : undefined;
 
   // 2. Strictly verify BookAccess status === "ACTIVE"
   const verification = await verifyUserBookAccess(user.id, bookSlug);
@@ -105,7 +105,7 @@ export default async function ReaderPage({ params, searchParams }: ReaderPagePro
           bookSlug={bookSlug}
           bookTitle={book.title}
           totalPages={book.totalPages}
-          initialPage={isNaN(targetPage) ? 1 : targetPage}
+          initialPage={targetPage}
           userWatermark={{
             username: user.username,
             displayName: user.name,
