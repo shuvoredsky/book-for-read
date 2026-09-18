@@ -38,8 +38,9 @@ export async function getCurrentUser(): Promise<SafeUser | null> {
     }
 
     return user;
-  } catch (error: any) {
-    if (error?.digest === "DYNAMIC_SERVER_USAGE" || error?.message?.includes("Dynamic server usage")) {
+  } catch (error: unknown) {
+    const err = error as { digest?: string; message?: string };
+    if (err?.digest === "DYNAMIC_SERVER_USAGE" || err?.message?.includes("Dynamic server usage")) {
       throw error;
     }
     console.error("Error retrieving current user:", error);
