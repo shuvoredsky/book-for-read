@@ -248,7 +248,7 @@ export default function HomePage() {
                   <div className="w-11 h-11 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-2">
                     <ShieldCheck className="h-5 w-5" />
                   </div>
-                  <CardTitle className="text-xl">সুরক্ষিত ক্লাউডফ্লেয়ার R2 স্টোরেজ</CardTitle>
+                  <CardTitle className="text-xl">সুরক্ষিত Backblaze B2 স্টোরেজ</CardTitle>
                   <CardDescription>
                     উচ্চগতির ক্লাউড সার্ভার থেকে দ্রুত ও নিরাপদে রেন্ডারিং সম্পন্ন হয়।
                   </CardDescription>

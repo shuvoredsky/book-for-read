@@ -42,7 +42,7 @@ export default function AdminSettingsPage() {
               <span className="font-mono text-primary">{siteConfig.book.slug}</span>
             </div>
             <div className="flex justify-between py-1.5">
-              <span className="text-muted-foreground">R2 স্টোরেজ কি:</span>
+              <span className="text-muted-foreground">B2 অবজেক্ট কি:</span>
               <span className="font-mono text-muted-foreground">{siteConfig.book.r2ObjectKey}</span>
             </div>
           </CardContent>
