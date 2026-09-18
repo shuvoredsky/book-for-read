@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Metadata } from "next";
 import { BookOpen, ShieldCheck, ArrowLeft, Lock } from "lucide-react";
 import { requireAuth } from "@/server/auth";
-import prisma from "@/lib/prisma";
+import { verifyUserBookAccess } from "@/server/access";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -22,28 +22,17 @@ interface ReaderPageProps {
 }
 
 export default async function ReaderPage({ params, searchParams }: ReaderPageProps) {
+  // 1. Authenticate user
   const user = await requireAuth();
   const { bookSlug } = await params;
   const { page } = await searchParams;
 
-  const book = await prisma.book.findUnique({
-    where: { slug: bookSlug },
-  });
+  // 2. Strictly verify BookAccess status === "ACTIVE"
+  const verification = await verifyUserBookAccess(user.id, bookSlug);
 
-  const bookAccess = book
-    ? await prisma.bookAccess.findUnique({
-        where: {
-          userId_bookId: {
-            userId: user.id,
-            bookId: book.id,
-          },
-        },
-      })
-    : null;
+  if (!verification.authorized || !verification.book) {
+    const isRevoked = verification.reason === "ACCESS_REVOKED";
 
-  const hasAccess = bookAccess?.status === "ACTIVE";
-
-  if (!hasAccess) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
         <Navbar />
@@ -53,10 +42,14 @@ export default async function ReaderPage({ params, searchParams }: ReaderPagePro
               <Lock className="h-6 w-6" />
             </div>
             <CardTitle className="text-xl font-bold">
-              বইটি পড়ার অনুমতি নেই (Access Restricted)
+              {isRevoked
+                ? "বইয়ের এক্সেস বাতিল করা হয়েছে (Access Revoked)"
+                : "বইটি পড়ার অনুমতি নেই (Access Restricted)"}
             </CardTitle>
             <CardDescription>
-              এই সুরক্ষিত রিডারটিতে প্রবেশ করার জন্য সক্রিয় BookAccess প্রয়োজন। অনুগ্রহ করে ড্যাশবোর্ড থেকে পেমেন্ট সম্পন্ন করুন।
+              {isRevoked
+                ? "এডমিন কর্তৃক আপনার রিডার এক্সেস সাময়িকভাবে বাতিল করা হয়েছে। কোনো জিজ্ঞাসা থাকলে সাপোর্টে যোগাযোগ করুন।"
+                : "এই সুরক্ষিত রিডারটিতে প্রবেশ করার জন্য সক্রিয় BookAccess প্রয়োজন। অনুগ্রহ করে ড্যাশবোর্ড থেকে পেমেন্ট সম্পন্ন করুন।"}
             </CardDescription>
             <div className="pt-2">
               <Link href="/dashboard">
@@ -73,7 +66,9 @@ export default async function ReaderPage({ params, searchParams }: ReaderPagePro
     );
   }
 
-  // Active user placeholder view (Full PDF.js reader engine implemented in Phase 10)
+  const book = verification.book;
+
+  // Active user view (Phase 10 connects the custom PDF.js canvas engine & Range requests)
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
@@ -88,7 +83,7 @@ export default async function ReaderPage({ params, searchParams }: ReaderPagePro
           <div className="flex items-center gap-2">
             <Badge variant="success" className="gap-1">
               <ShieldCheck className="h-3.5 w-3.5" />
-              Verifed Access Active
+              Verified Active Access
             </Badge>
             <span className="text-xs text-muted-foreground font-mono">
               Watermark: @{user.username}
@@ -101,7 +96,7 @@ export default async function ReaderPage({ params, searchParams }: ReaderPagePro
             <BookOpen className="h-8 w-8" />
           </div>
           <CardTitle className="text-2xl font-bold">
-            {book?.title || "Essential Clinical Medicine"}
+            {book.title}
           </CardTitle>
           <CardDescription className="max-w-md mx-auto">
             আপনি বর্তমানে সুরক্ষিত রিডার সিস্টেমে যুক্ত আছেন।
