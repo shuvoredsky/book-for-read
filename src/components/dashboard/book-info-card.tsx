@@ -1,4 +1,4 @@
-import { BookOpen, ShieldCheck, FileText, CheckCircle2 } from "lucide-react";
+import { ShieldCheck, FileText, CheckCircle2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { siteConfig } from "@/config/site";

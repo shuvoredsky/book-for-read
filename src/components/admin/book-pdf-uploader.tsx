@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import {
   UploadCloud,
   FileText,
-  CheckCircle2,
   AlertCircle,
   Loader2,
   HardDrive,

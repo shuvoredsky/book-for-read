@@ -6,11 +6,9 @@ import {
   CheckCircle2,
   XCircle,
   KeyRound,
-  BookOpen,
   ArrowRight,
   Clock,
   History,
-  ShieldCheck,
   TrendingUp,
 } from "lucide-react";
 import prisma from "@/lib/prisma";

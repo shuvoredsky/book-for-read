@@ -2,12 +2,12 @@ import Link from "next/link";
 import {
   CheckCircle2,
   Clock,
-  CreditCard,
   MessageSquare,
   BookOpen,
   ArrowRight,
   AlertTriangle,
   FileCheck2,
+  ShieldAlert,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import { formatDate } from "@/lib/utils";
 interface AccessStatusCardProps {
   bookSlug: string;
   hasActiveAccess: boolean;
+  bookAccessStatus?: "ACTIVE" | "REVOKED" | null;
   latestPayment: {
     id: string;
     amount: number;
@@ -34,6 +35,7 @@ interface AccessStatusCardProps {
 export function AccessStatusCard({
   bookSlug,
   hasActiveAccess,
+  bookAccessStatus,
   latestPayment,
 }: AccessStatusCardProps) {
   // STATE 1: ACTIVE ACCESS GRANTED
@@ -75,7 +77,46 @@ export function AccessStatusCard({
     );
   }
 
-  // STATE 2: PAYMENT PENDING VERIFICATION
+  // STATE 2: ACCESS REVOKED
+  if (bookAccessStatus === "REVOKED") {
+    return (
+      <Card className="glass-card border-rose-500/30 bg-rose-500/5 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/10 rounded-full blur-2xl pointer-events-none" />
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <Badge variant="destructive" className="gap-1.5 px-3 py-1">
+              <ShieldAlert className="h-3.5 w-3.5" />
+              এক্সেস স্থগিত (Access Revoked)
+            </Badge>
+            <span className="text-xs text-rose-500 font-semibold font-mono">
+              Access Suspended
+            </span>
+          </div>
+          <CardTitle className="text-xl sm:text-2xl font-bold text-foreground pt-2">
+            বইটির রিডার এক্সেস স্থগিত করা হয়েছে।
+          </CardTitle>
+          <CardDescription className="text-foreground/80">
+            প্রশাসনিক কারণে আপনার রিডার এক্সেস সাময়িকভাবে স্থগিত রয়েছে। কোনো জিজ্ঞাসা থাকলে বা এক্সেস পুনরুদ্ধারের জন্য সরাসরি সাপোর্টে যোগাযোগ করুন।
+          </CardDescription>
+        </CardHeader>
+        <CardFooter className="pt-2 flex flex-col sm:flex-row gap-3">
+          <a
+            href={siteConfig.links.messengerContact}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full sm:w-auto"
+          >
+            <Button variant="outline" size="lg" className="w-full sm:w-auto gap-2">
+              <MessageSquare className="h-4 w-4 text-blue-500" />
+              সাপোর্টে যোগাযোগ করুন (Messenger)
+            </Button>
+          </a>
+        </CardFooter>
+      </Card>
+    );
+  }
+
+  // STATE 3: PAYMENT PENDING VERIFICATION
   if (latestPayment && latestPayment.status === "PENDING") {
     return (
       <Card className="glass-card border-amber-500/30 bg-amber-500/5 relative overflow-hidden">
@@ -134,7 +175,7 @@ export function AccessStatusCard({
     );
   }
 
-  // STATE 3: NO PAYMENT / REJECTED PAYMENT -> PAYMENT INSTRUCTIONS
+  // STATE 4: NO PAYMENT / REJECTED PAYMENT -> PAYMENT INSTRUCTIONS
   return (
     <Card className="glass-card border-primary/30 relative overflow-hidden">
       <CardHeader className="pb-3">

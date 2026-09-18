@@ -1,7 +1,6 @@
 import { Metadata } from "next";
-import { Settings, Phone, MessageSquare, DollarSign, Shield } from "lucide-react";
+import { Phone, DollarSign } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { siteConfig } from "@/config/site";
 
 export const dynamic = "force-dynamic";

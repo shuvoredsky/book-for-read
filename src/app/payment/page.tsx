@@ -4,11 +4,7 @@ import { redirect } from "next/navigation";
 import {
   ArrowLeft,
   MessageSquare,
-  ShieldCheck,
   CheckCircle2,
-  AlertCircle,
-  HelpCircle,
-  Clock,
 } from "lucide-react";
 import { requireAuth } from "@/server/auth";
 import prisma from "@/lib/prisma";

@@ -3,12 +3,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   Clock,
-  CheckCircle2,
   MessageSquare,
-  ArrowRight,
   ShieldCheck,
-  FileCheck2,
-  HelpCircle,
   BookOpen,
 } from "lucide-react";
 import { requireAuth } from "@/server/auth";

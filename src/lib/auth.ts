@@ -36,8 +36,13 @@ export const auth = betterAuth({
       maxAge: 60 * 5, // 5 minutes
     },
   },
-  secret: process.env.BETTER_AUTH_SECRET || "default_medical_book_secret_key_32_chars_min",
-  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
+  secret: process.env.BETTER_AUTH_SECRET || "medical_book_secure_auth_secret_key_32chars_min",
+  baseURL: process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+  trustedOrigins: [
+    process.env.BETTER_AUTH_URL,
+    process.env.NEXT_PUBLIC_APP_URL,
+    "http://localhost:3000",
+  ].filter(Boolean) as string[],
 });
 
 export type Session = typeof auth.$Infer.Session;

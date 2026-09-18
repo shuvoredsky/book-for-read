@@ -11,9 +11,6 @@ import {
   XCircle,
   ChevronLeft,
   ChevronRight,
-  Filter,
-  Eye,
-  Info,
 } from "lucide-react";
 import { PaymentActionsDialog } from "@/components/admin/payment-actions-dialog";
 import { Button } from "@/components/ui/button";

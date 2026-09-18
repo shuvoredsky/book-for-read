@@ -14,6 +14,14 @@ export async function getReadingProgressAction(
   bookSlug: string
 ): Promise<ActionResponse<ReadingProgressData>> {
   try {
+    const cleanSlug = typeof bookSlug === "string" ? bookSlug.trim() : "";
+    if (!cleanSlug || cleanSlug.length > 100 || !/^[a-zA-Z0-9_-]+$/.test(cleanSlug)) {
+      return {
+        success: false,
+        error: "অবৈধ বইয়ের তথ্য প্রদান করা হয়েছে।",
+      };
+    }
+
     const user = await getCurrentUser();
     if (!user) {
       return {
@@ -22,7 +30,7 @@ export async function getReadingProgressAction(
       };
     }
 
-    const verification = await verifyUserBookAccess(user.id, bookSlug);
+    const verification = await verifyUserBookAccess(user.id, cleanSlug);
     if (!verification.authorized || !verification.book) {
       return {
         success: false,

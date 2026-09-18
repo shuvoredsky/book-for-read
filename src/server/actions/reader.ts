@@ -27,7 +27,16 @@ export async function getBookReadUrlAction(
   bookSlug: string
 ): Promise<ActionResponse<PresignedUrlData>> {
   try {
-    // 1. Authenticate user
+    // 1. Validate input parameter
+    const cleanSlug = typeof bookSlug === "string" ? bookSlug.trim() : "";
+    if (!cleanSlug || cleanSlug.length > 100 || !/^[a-zA-Z0-9_-]+$/.test(cleanSlug)) {
+      return {
+        success: false,
+        error: "অবৈধ বইয়ের তথ্য প্রদান করা হয়েছে।",
+      };
+    }
+
+    // 2. Authenticate user
     const user = await getCurrentUser();
     if (!user) {
       return {
@@ -37,7 +46,7 @@ export async function getBookReadUrlAction(
     }
 
     // 2. Cooldown guard: prevent rapid repeated calls
-    const cooldownKey = `${user.id}:${bookSlug}`;
+    const cooldownKey = `${user.id}:${cleanSlug}`;
     const now = Date.now();
     const lastRequest = requestCooldownMap.get(cooldownKey);
     if (lastRequest && now - lastRequest < COOLDOWN_WINDOW_MS) {
@@ -48,12 +57,22 @@ export async function getBookReadUrlAction(
     }
     requestCooldownMap.set(cooldownKey, now);
 
+    // Prune stale entries if Map grows large (> 5000 entries)
+    if (requestCooldownMap.size > 5000) {
+      const cutoff = now - 3600000; // Older than 1 hour
+      for (const [key, timestamp] of requestCooldownMap.entries()) {
+        if (timestamp < cutoff) {
+          requestCooldownMap.delete(key);
+        }
+      }
+    }
+
     // 3. Sequentially verify:
     // a. User exists & status === "ACTIVE"
     // b. Book exists & isActive === true & matches slug
     // c. BookAccess exists & status === "ACTIVE"
     // (Reuses centralized verifyUserBookAccess from Phase 7)
-    const verification = await verifyUserBookAccess(user.id, bookSlug);
+    const verification = await verifyUserBookAccess(user.id, cleanSlug);
 
     if (!verification.authorized || !verification.book) {
       if (verification.reason === "ACCESS_REVOKED") {

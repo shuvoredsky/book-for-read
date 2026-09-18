@@ -1,7 +1,6 @@
 import { Metadata } from "next";
-import { History, Shield, CheckCircle2, XCircle } from "lucide-react";
 import prisma from "@/lib/prisma";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
 

@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LogOut, User, BookOpen } from "lucide-react";
+import { LogOut, BookOpen, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { signOut, useSession } from "@/lib/auth-client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -40,6 +40,7 @@ export function UserNav() {
   }
 
   const user = session.user;
+  const userRole = (user as unknown as { role?: string })?.role;
   const initials = user.name
     ? user.name
         .split(" ")
@@ -87,12 +88,17 @@ export function UserNav() {
               <span>ড্যাশবোর্ড (Dashboard)</span>
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href="/profile" className="cursor-pointer flex items-center">
-              <User className="mr-2 h-4 w-4" />
-              <span>প্রোফাইল (Profile)</span>
-            </Link>
-          </DropdownMenuItem>
+          {userRole === "ADMIN" && (
+            <DropdownMenuItem asChild>
+              <Link
+                href="/admin"
+                className="cursor-pointer flex items-center text-purple-600 dark:text-purple-400 font-medium"
+              >
+                <Shield className="mr-2 h-4 w-4" />
+                <span>এডমিন প্যানেল (Admin)</span>
+              </Link>
+            </DropdownMenuItem>
+          )}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Check, X, Loader2, AlertCircle, ShieldCheck } from "lucide-react";
+import { Check, X, Loader2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import {
   approvePaymentAction,

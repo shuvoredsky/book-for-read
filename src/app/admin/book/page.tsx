@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { BookOpen, ShieldCheck, Database, HardDrive, FileText } from "lucide-react";
+import { BookOpen, ShieldCheck, HardDrive, FileText } from "lucide-react";
 import prisma from "@/lib/prisma";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

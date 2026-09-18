@@ -39,6 +39,7 @@ export default async function DashboardPage() {
           <AccessStatusCard
             bookSlug={bookSlug}
             hasActiveAccess={hasActiveAccess}
+            bookAccessStatus={data.bookAccess?.status}
             latestPayment={data.latestPayment}
           />
 
