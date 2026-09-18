@@ -18,6 +18,10 @@ import { ReaderToolbar } from "./reader-toolbar";
 import { PdfPage } from "./pdf-page";
 import { ReaderLoading } from "./reader-loading";
 import { ReaderError } from "./reader-error";
+import { ReaderToc } from "./reader-toc";
+import { ReaderSearch } from "./reader-search";
+import { extractTableOfContents } from "@/lib/pdf-outline";
+import type { TocItem } from "@/config/toc";
 import type { BookmarkItem } from "@/types";
 
 // Configure PDF.js Web Worker
@@ -48,6 +52,7 @@ export function PdfReader({
   const scrollAreaRef = React.useRef<HTMLDivElement | null>(null);
   const saveTimerRef = React.useRef<NodeJS.Timeout | null>(null);
   const lastSavedPageRef = React.useRef<number>(initialPage);
+  const pdfDocRef = React.useRef<PDFDocumentProxy | null>(null);
 
   const [pdfDoc, setPdfDoc] = React.useState<PDFDocumentProxy | null>(null);
   const [currentPage, setCurrentPage] = React.useState<number>(
@@ -61,9 +66,15 @@ export function PdfReader({
   const [isExpired, setIsExpired] = React.useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = React.useState<boolean>(false);
 
-  // Bookmark State
+  // Bookmark State (Phase 13)
   const [bookmarks, setBookmarks] = React.useState<BookmarkItem[]>([]);
   const [isBookmarking, setIsBookmarking] = React.useState<boolean>(false);
+
+  // TOC and Search States (Phases 14 & 15)
+  const [tocItems, setTocItems] = React.useState<TocItem[]>([]);
+  const [isTocOpen, setIsTocOpen] = React.useState<boolean>(false);
+  const [isSearchOpen, setIsSearchOpen] = React.useState<boolean>(false);
+  const textCacheRef = React.useRef<Map<number, string>>(new Map());
 
   // 1. Fetch saved progress, bookmarks, and signed URL in parallel
   const initializeReader = React.useCallback(
@@ -126,9 +137,15 @@ export function PdfReader({
 
         const doc = await loadingTask.promise;
 
+        pdfDocRef.current = doc;
         setPdfDoc(doc);
         setTotalPages(doc.numPages);
         setIsLoading(false);
+
+        // Extract document outline/TOC asynchronously
+        extractTableOfContents(doc)
+          .then((items) => setTocItems(items))
+          .catch((err) => console.warn("[PdfReader] Outline extraction error:", err));
 
         if (isRetry) {
           toast.success("রিডিং সেশন সফলভাবে নবায়ন হয়েছে!");
@@ -157,8 +174,8 @@ export function PdfReader({
     initializeReader();
 
     return () => {
-      if (pdfDoc) {
-        pdfDoc.destroy().catch(() => {});
+      if (pdfDocRef.current) {
+        pdfDocRef.current.destroy().catch(() => {});
       }
     };
   }, [initializeReader]);
@@ -352,9 +369,16 @@ export function PdfReader({
     return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
   }, []);
 
-  // 6. Keyboard Navigation
+  // 6. Keyboard Navigation & Shortcuts
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Handle global PDF search shortcut (Ctrl+F or Cmd+F)
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f") {
+        e.preventDefault();
+        setIsSearchOpen((prev) => !prev);
+        return;
+      }
+
       const activeTag = document.activeElement?.tagName?.toLowerCase();
       if (
         activeTag === "input" ||
@@ -382,6 +406,9 @@ export function PdfReader({
       } else if ((e.key === "b" || e.key === "B") && !e.ctrlKey && !e.metaKey) {
         e.preventDefault();
         handleToggleBookmark();
+      } else if ((e.key === "t" || e.key === "T") && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        setIsTocOpen((prev) => !prev);
       }
     };
 
@@ -413,7 +440,7 @@ export function PdfReader({
       {/* 3. Active PDF Canvas Reader */}
       {!isLoading && !error && pdfDoc && (
         <div className="w-full flex flex-col items-center space-y-4">
-          {/* Reader Top Navigation & Bookmarks Toolbar (Phase 11 & 13) */}
+          {/* Reader Top Navigation & Toolbar (Phases 11, 13, 14, 15) */}
           <ReaderToolbar
             currentPage={currentPage}
             totalPages={totalPages}
@@ -422,6 +449,8 @@ export function PdfReader({
             bookmarks={bookmarks}
             isCurrentPageBookmarked={isCurrentPageBookmarked}
             isBookmarking={isBookmarking}
+            isTocOpen={isTocOpen}
+            isSearchOpen={isSearchOpen}
             onPageChange={handlePageChange}
             onToggleBookmark={handleToggleBookmark}
             onDeleteBookmark={handleDeleteBookmark}
@@ -430,6 +459,8 @@ export function PdfReader({
             onResetZoom={handleResetZoom}
             onFitWidth={handleFitWidth}
             onToggleFullscreen={handleToggleFullscreen}
+            onOpenToc={() => setIsTocOpen(true)}
+            onOpenSearch={() => setIsSearchOpen(true)}
           />
 
           {/* Canvas Scroll & Viewport Area */}
@@ -438,7 +469,7 @@ export function PdfReader({
             className="w-full overflow-auto max-h-[82vh] py-6 px-2 sm:px-4 flex justify-center rounded-2xl border border-border/40 bg-muted/20 dark:bg-muted/10 backdrop-blur-sm custom-scrollbar"
             tabIndex={0}
             role="region"
-            aria-label="মেডিকেল বই রিডিং ক্যানভাস এলাকা"
+            aria-label={`${bookTitle} - রিডিং ক্যানভাস এলাকা`}
           >
             <PdfPage
               pdfDoc={pdfDoc}
@@ -452,10 +483,29 @@ export function PdfReader({
             />
           </div>
 
+          {/* Table of Contents Drawer (Phase 14) */}
+          <ReaderToc
+            isOpen={isTocOpen}
+            onClose={() => setIsTocOpen(false)}
+            tocItems={tocItems}
+            currentPage={currentPage}
+            onSelectPage={handlePageChange}
+          />
+
+          {/* In-Book PDF Text Search Modal (Phase 15) */}
+          <ReaderSearch
+            isOpen={isSearchOpen}
+            onClose={() => setIsSearchOpen(false)}
+            pdfDoc={pdfDoc}
+            currentPage={currentPage}
+            onSelectPage={handlePageChange}
+            textCache={textCacheRef}
+          />
+
           {/* Bottom Quick Page Indicator for Mobile */}
           <div className="flex items-center justify-between w-full max-w-lg px-2 text-xs text-muted-foreground">
             <span className="font-mono">
-              শর্টকাট: <kbd className="px-1.5 py-0.5 rounded bg-muted border font-mono">←</kbd> / <kbd className="px-1.5 py-0.5 rounded bg-muted border font-mono">→</kbd> | বুকমার্ক: <kbd className="px-1.5 py-0.5 rounded bg-muted border font-mono">B</kbd>
+              শর্টকাট: <kbd className="px-1.5 py-0.5 rounded bg-muted border font-mono">←</kbd> / <kbd className="px-1.5 py-0.5 rounded bg-muted border font-mono">→</kbd> | বুকমার্ক: <kbd className="px-1.5 py-0.5 rounded bg-muted border font-mono">B</kbd> | সার্চ: <kbd className="px-1.5 py-0.5 rounded bg-muted border font-mono">Ctrl+F</kbd> | সূচিপত্র: <kbd className="px-1.5 py-0.5 rounded bg-muted border font-mono">T</kbd>
             </span>
             <span className="font-mono text-primary font-semibold">
               পৃষ্ঠা {currentPage} / {totalPages}

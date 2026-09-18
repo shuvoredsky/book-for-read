@@ -1,5 +1,6 @@
 import { Metadata } from "next";
-import { KeyRound, ShieldCheck, ShieldAlert } from "lucide-react";
+import { ShieldCheck, ShieldAlert } from "lucide-react";
+import type { Prisma, AccessStatus } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { AccessTable } from "@/components/admin/access-table";
 import { Badge } from "@/components/ui/badge";
@@ -31,10 +32,10 @@ export default async function AdminAccessPage({
   const statusFilter = (params.status || "ALL").toUpperCase();
 
   // Construct dynamic Prisma where clause
-  const where: any = {};
+  const where: Prisma.BookAccessWhereInput = {};
 
   if (["ACTIVE", "REVOKED"].includes(statusFilter)) {
-    where.status = statusFilter;
+    where.status = statusFilter as AccessStatus;
   }
 
   if (search) {

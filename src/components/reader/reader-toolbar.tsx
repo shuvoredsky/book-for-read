@@ -16,6 +16,7 @@ import {
   Trash2,
   ArrowUpRight,
   Loader2,
+  Search,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,8 @@ interface ReaderToolbarProps {
   bookmarks: BookmarkItem[];
   isCurrentPageBookmarked: boolean;
   isBookmarking?: boolean;
+  isTocOpen?: boolean;
+  isSearchOpen?: boolean;
   onPageChange: (newPage: number) => void;
   onToggleBookmark: () => void;
   onDeleteBookmark: (bookmarkId: string) => void;
@@ -52,6 +55,8 @@ interface ReaderToolbarProps {
   onResetZoom: () => void;
   onFitWidth: () => void;
   onToggleFullscreen: () => void;
+  onOpenToc?: () => void;
+  onOpenSearch?: () => void;
 }
 
 export function ReaderToolbar({
@@ -62,6 +67,8 @@ export function ReaderToolbar({
   bookmarks,
   isCurrentPageBookmarked,
   isBookmarking = false,
+  isTocOpen = false,
+  isSearchOpen = false,
   onPageChange,
   onToggleBookmark,
   onDeleteBookmark,
@@ -70,13 +77,17 @@ export function ReaderToolbar({
   onResetZoom,
   onFitWidth,
   onToggleFullscreen,
+  onOpenToc,
+  onOpenSearch,
 }: ReaderToolbarProps) {
   const [pageInput, setPageInput] = React.useState(currentPage.toString());
+  const [prevPage, setPrevPage] = React.useState(currentPage);
 
-  // Synchronize local input with prop changes
-  React.useEffect(() => {
+  // Synchronize local input during render when currentPage prop changes
+  if (currentPage !== prevPage) {
+    setPrevPage(currentPage);
     setPageInput(currentPage.toString());
-  }, [currentPage]);
+  }
 
   const handlePageSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,22 +116,46 @@ export function ReaderToolbar({
         role="toolbar"
         aria-label="PDF রিডার টুলবার"
       >
-        {/* Left Section: Page Navigation & TOC */}
-        <div className="flex items-center gap-1 sm:gap-2">
-          {/* Table of Contents Placeholder */}
+        {/* Left Section: Page Navigation, TOC & Search */}
+        <div className="flex items-center gap-1 sm:gap-1.5">
+          {/* Table of Contents Trigger (Phase 14) */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant="ghost"
+                variant={isTocOpen ? "secondary" : "ghost"}
                 size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                className={`h-8 w-8 ${
+                  isTocOpen
+                    ? "text-primary bg-primary/10"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
                 aria-label="সূচিপত্র (TOC)"
-                onClick={() => toast.info("চ্যাপ্টার সূচিপত্র মডিউল পরবর্তী ফেজে যুক্ত হবে।")}
+                onClick={onOpenToc}
               >
                 <ListOrdered className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">সূচিপত্র (TOC)</TooltipContent>
+          </Tooltip>
+
+          {/* In-Book Text Search Trigger (Phase 15) */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={isSearchOpen ? "secondary" : "ghost"}
+                size="icon"
+                className={`h-8 w-8 ${
+                  isSearchOpen
+                    ? "text-primary bg-primary/10"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                aria-label="বইয়ে খুঁজুন (Ctrl+F)"
+                onClick={onOpenSearch}
+              >
+                <Search className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">বইয়ে খুঁজুন (Ctrl+F)</TooltipContent>
           </Tooltip>
 
           <div className="h-4 w-[1px] bg-border mx-0.5" />

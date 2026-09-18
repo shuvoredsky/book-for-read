@@ -1,8 +1,8 @@
 import { Metadata } from "next";
-import { CreditCard, CheckCircle2, Clock, XCircle } from "lucide-react";
+import { CheckCircle2, Clock, XCircle } from "lucide-react";
+import type { Prisma, PaymentStatus } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { PaymentsTable } from "@/components/admin/payments-table";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 export const dynamic = "force-dynamic";
@@ -32,10 +32,10 @@ export default async function AdminPaymentsPage({
   const statusFilter = (params.status || "ALL").toUpperCase();
 
   // Construct dynamic Prisma where clause
-  const where: any = {};
+  const where: Prisma.PaymentWhereInput = {};
 
   if (["PENDING", "APPROVED", "REJECTED"].includes(statusFilter)) {
-    where.status = statusFilter;
+    where.status = statusFilter as PaymentStatus;
   }
 
   if (search) {
