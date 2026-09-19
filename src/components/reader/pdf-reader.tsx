@@ -67,30 +67,36 @@ export function PdfReader({
   });
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
   const [loadingMessage, setLoadingMessage] = React.useState<string>("বইটি লোড হচ্ছে...");
+  const [downloadProgress, setDownloadProgress] = React.useState<{
+    percentage: number;
+    loadedMb: string;
+    totalMb: string;
+  } | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [isExpired, setIsExpired] = React.useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = React.useState<boolean>(false);
 
-  // Bookmark State (Phase 13)
+  // Bookmark State
   const [bookmarks, setBookmarks] = React.useState<BookmarkItem[]>([]);
   const [isBookmarking, setIsBookmarking] = React.useState<boolean>(false);
 
-  // TOC and Search States (Phases 14 & 15)
+  // TOC and Search States
   const [tocItems, setTocItems] = React.useState<TocItem[]>([]);
   const [isTocOpen, setIsTocOpen] = React.useState<boolean>(false);
   const [isSearchOpen, setIsSearchOpen] = React.useState<boolean>(false);
   const textCacheRef = React.useRef<Map<number, string>>(new Map());
 
-  // 1. Fetch saved progress, bookmarks, and signed URL in parallel
+  // 1. Fetch saved progress, bookmarks, and stream PDF bytes into browser memory
   const initializeReader = React.useCallback(
     async (isRetry: boolean = false) => {
       setIsLoading(true);
       setError(null);
       setIsExpired(false);
+      setDownloadProgress(null);
       setLoadingMessage(
         isRetry
           ? "রিডিং সেশন রিফ্রেশ করা হচ্ছে..."
-          : "সুরক্ষিত ব্যাকব্লেজ B2 ভল্ট থেকে বইটি লোড হচ্ছে..."
+          : "সুরক্ষিত ভল্ট থেকে বইটি লোড করা হচ্ছে..."
       );
 
       try {
@@ -125,13 +131,67 @@ export function PdfReader({
 
         const signedUrl = urlRes.data.presignedUrl;
 
-        // Initialize PDF.js Document with same-origin credentials & on-demand Range streaming
+        // Stream PDF binary directly into browser memory with progress tracking
+        setLoadingMessage("বইটি ডাউনলোড করা হচ্ছে...");
+        const response = await fetch(signedUrl, { credentials: "include" });
+
+        if (!response.ok) {
+          if (response.status === 401 || response.status === 403) {
+            setError("বইটির এক্সেস পাওয়া যায়নি। অনুগ্রহ করে আপনার অ্যাকাউন্ট ভেরিফাই করুন।");
+          } else {
+            setError(`বইটি লোড করতে সমস্যা হয়েছে (Error Code: ${response.status})।`);
+          }
+          setIsLoading(false);
+          return;
+        }
+
+        const contentLengthHeader = response.headers.get("content-length");
+        const totalBytes = contentLengthHeader ? parseInt(contentLengthHeader, 10) : 0;
+        const totalMb = totalBytes > 0 ? (totalBytes / (1024 * 1024)).toFixed(1) : null;
+
+        if (!response.body) {
+          throw new Error("ReadableStream is not supported by this browser environment.");
+        }
+
+        const reader = response.body.getReader();
+        const chunks: Uint8Array[] = [];
+        let loadedBytes = 0;
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          if (value) {
+            chunks.push(value);
+            loadedBytes += value.length;
+
+            if (totalBytes > 0) {
+              const percentage = Math.min(100, Math.round((loadedBytes / totalBytes) * 100));
+              const loadedMb = (loadedBytes / (1024 * 1024)).toFixed(1);
+              setDownloadProgress({
+                percentage,
+                loadedMb,
+                totalMb: totalMb || "45.7",
+              });
+              setLoadingMessage(`বইটি প্রস্তুত করা হচ্ছে (${loadedMb} MB / ${totalMb || "45.7"} MB)...`);
+            }
+          }
+        }
+
+        // Combine chunks into a contiguous in-memory Uint8Array (memory-only, not persisted to disk)
+        const pdfData = new Uint8Array(loadedBytes);
+        let offset = 0;
+        for (const chunk of chunks) {
+          pdfData.set(chunk, offset);
+          offset += chunk.length;
+        }
+
+        setLoadingMessage("পিডিএফ ক্যানভাস প্রস্তুত হচ্ছে...");
+
+        // Initialize PDF.js Document with in-memory buffer
         const loadingTask = pdfjsLib.getDocument({
-          url: signedUrl,
-          withCredentials: true,
-          disableAutoFetch: true, // Only fetch requested byte ranges on demand
-          disableStream: false,
-          rangeChunkSize: 65536,  // 64 KB partial chunks
+          data: pdfData,
+          useSystemFonts: true,
         });
 
         const doc = await loadingTask.promise;
@@ -236,7 +296,7 @@ export function PdfReader({
     };
   }, []);
 
-  // 3. Bookmark Management Handlers (Phase 13)
+  // 3. Bookmark Management Handlers
   const isCurrentPageBookmarked = React.useMemo(() => {
     return bookmarks.some((bm) => bm.pageNumber === currentPage);
   }, [bookmarks, currentPage]);
@@ -501,8 +561,15 @@ export function PdfReader({
           : "relative space-y-4"
       }`}
     >
-      {/* 1. Loading State */}
-      {isLoading && <ReaderLoading message={loadingMessage} />}
+      {/* 1. Loading State with Progress Bar */}
+      {isLoading && (
+        <ReaderLoading
+          message={loadingMessage}
+          progressPercentage={downloadProgress?.percentage}
+          loadedMb={downloadProgress?.loadedMb}
+          totalMb={downloadProgress?.totalMb}
+        />
+      )}
 
       {/* 2. Error State */}
       {!isLoading && error && (
@@ -516,7 +583,7 @@ export function PdfReader({
       {/* 3. Active PDF Canvas Reader */}
       {!isLoading && !error && pdfDoc && (
         <div className="w-full flex flex-col items-center space-y-4">
-          {/* Reader Top Navigation & Toolbar (Phases 11, 13, 14, 15) */}
+          {/* Reader Top Navigation & Toolbar */}
           <ReaderToolbar
             currentPage={currentPage}
             totalPages={totalPages}
@@ -560,7 +627,7 @@ export function PdfReader({
             />
           </div>
 
-          {/* Table of Contents Drawer (Phase 14) */}
+          {/* Table of Contents Drawer */}
           <ReaderToc
             isOpen={isTocOpen}
             onClose={() => setIsTocOpen(false)}
@@ -569,7 +636,7 @@ export function PdfReader({
             onSelectPage={handlePageChange}
           />
 
-          {/* In-Book PDF Text Search Modal (Phase 15) */}
+          {/* In-Book PDF Text Search Modal */}
           <ReaderSearch
             isOpen={isSearchOpen}
             onClose={() => setIsSearchOpen(false)}
