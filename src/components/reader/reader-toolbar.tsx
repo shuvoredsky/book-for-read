@@ -112,19 +112,19 @@ export function ReaderToolbar({
   return (
     <TooltipProvider delayDuration={300}>
       <header
-        className="w-full z-20 glass-card sticky top-3 rounded-2xl border border-border/80 shadow-md backdrop-blur-xl bg-background/85 px-3 py-2 flex flex-wrap items-center justify-between gap-2"
+        className="w-full z-20 glass-card sticky top-2 sm:top-3 rounded-2xl border border-border/80 shadow-md backdrop-blur-xl bg-background/90 px-2 sm:px-3 py-1.5 sm:py-2 flex flex-wrap items-center justify-between gap-1.5 sm:gap-2"
         role="toolbar"
         aria-label="PDF রিডার টুলবার"
       >
         {/* Left Section: Page Navigation, TOC & Search */}
-        <div className="flex items-center gap-1 sm:gap-1.5">
+        <div className="flex items-center gap-0.5 sm:gap-1.5">
           {/* Table of Contents Trigger (Phase 14) */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 variant={isTocOpen ? "secondary" : "ghost"}
                 size="icon"
-                className={`h-8 w-8 ${
+                className={`h-7 w-7 sm:h-8 sm:w-8 ${
                   isTocOpen
                     ? "text-primary bg-primary/10"
                     : "text-muted-foreground hover:text-foreground"
@@ -132,7 +132,7 @@ export function ReaderToolbar({
                 aria-label="সূচিপত্র (TOC)"
                 onClick={onOpenToc}
               >
-                <ListOrdered className="h-4 w-4" />
+                <ListOrdered className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">সূচিপত্র (TOC)</TooltipContent>
@@ -144,7 +144,7 @@ export function ReaderToolbar({
               <Button
                 variant={isSearchOpen ? "secondary" : "ghost"}
                 size="icon"
-                className={`h-8 w-8 ${
+                className={`h-7 w-7 sm:h-8 sm:w-8 ${
                   isSearchOpen
                     ? "text-primary bg-primary/10"
                     : "text-muted-foreground hover:text-foreground"
@@ -152,7 +152,7 @@ export function ReaderToolbar({
                 aria-label="বইয়ে খুঁজুন (Ctrl+F)"
                 onClick={onOpenSearch}
               >
-                <Search className="h-4 w-4" />
+                <Search className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">বইয়ে খুঁজুন (Ctrl+F)</TooltipContent>
@@ -166,19 +166,19 @@ export function ReaderToolbar({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className="h-7 w-7 sm:h-8 sm:w-8"
                 onClick={() => onPageChange(currentPage - 1)}
                 disabled={isFirstPage}
                 aria-label="পূর্ববর্তী পৃষ্ঠা (ArrowLeft)"
               >
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">পূর্ববর্তী পৃষ্ঠা (←)</TooltipContent>
           </Tooltip>
 
           {/* Page Input Form */}
-          <form onSubmit={handlePageSubmit} className="flex items-center gap-1.5">
+          <form onSubmit={handlePageSubmit} className="flex items-center gap-1 sm:gap-1.5">
             <Input
               type="text"
               inputMode="numeric"
@@ -186,10 +186,10 @@ export function ReaderToolbar({
               value={pageInput}
               onChange={(e) => setPageInput(e.target.value)}
               onBlur={handlePageSubmit}
-              className="h-7 w-12 text-center text-xs font-mono font-bold px-1 py-0"
+              className="h-7 w-10 sm:w-12 text-center text-xs font-mono font-bold px-1 py-0"
               aria-label="বর্তমান পৃষ্ঠা নম্বর লিখুন"
             />
-            <span className="text-xs text-muted-foreground font-mono whitespace-nowrap">
+            <span className="text-[11px] sm:text-xs text-muted-foreground font-mono whitespace-nowrap">
               / {totalPages || "..."}
             </span>
           </form>
@@ -200,12 +200,12 @@ export function ReaderToolbar({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className="h-7 w-7 sm:h-8 sm:w-8"
                 onClick={() => onPageChange(currentPage + 1)}
                 disabled={isLastPage}
                 aria-label="পরবর্তী পৃষ্ঠা (ArrowRight)"
               >
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">পরবর্তী পৃষ্ঠা (→)</TooltipContent>
@@ -213,14 +213,14 @@ export function ReaderToolbar({
         </div>
 
         {/* Center / Right Section: Bookmarks, Zoom & Fullscreen Controls */}
-        <div className="flex items-center gap-1 sm:gap-1.5">
+        <div className="flex items-center gap-0.5 sm:gap-1.5">
           {/* Bookmark Current Page Button */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 variant={isCurrentPageBookmarked ? "secondary" : "ghost"}
                 size="sm"
-                className={`h-8 px-2.5 gap-1.5 text-xs font-medium ${
+                className={`h-7 sm:h-8 px-2 sm:px-2.5 gap-1 sm:gap-1.5 text-xs font-medium ${
                   isCurrentPageBookmarked
                     ? "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20"
                     : "text-muted-foreground hover:text-foreground"
@@ -262,7 +262,7 @@ export function ReaderToolbar({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-8 px-2 gap-1 text-xs text-muted-foreground hover:text-foreground relative"
+                    className="h-7 sm:h-8 px-1.5 sm:px-2 gap-1 text-xs text-muted-foreground hover:text-foreground relative"
                     aria-label="সংরক্ষিত বুকমার্ক তালিকা দেখুন"
                   >
                     <Bookmark className="h-3.5 w-3.5" />
@@ -354,12 +354,12 @@ export function ReaderToolbar({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className="h-7 w-7 sm:h-8 sm:w-8"
                 onClick={onZoomOut}
                 disabled={scale <= 0.5}
                 aria-label="জুম আউট (Zoom Out)"
               >
-                <ZoomOut className="h-4 w-4" />
+                <ZoomOut className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">জুম আউট (-)</TooltipContent>
@@ -371,14 +371,14 @@ export function ReaderToolbar({
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 px-2 text-xs font-mono font-semibold text-muted-foreground hover:text-foreground"
+                className="h-7 sm:h-8 px-1 sm:px-2 text-xs font-mono font-semibold text-muted-foreground hover:text-foreground"
                 onClick={onResetZoom}
                 aria-label="জুম রিসেট (100%)"
               >
                 {zoomPercentage}%
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="bottom">জুম রিসেট (100%)</TooltipContent>
+            <TooltipContent side="bottom">জুম রিসেট (Fit to Screen)</TooltipContent>
           </Tooltip>
 
           {/* Zoom In */}
@@ -387,12 +387,12 @@ export function ReaderToolbar({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className="h-7 w-7 sm:h-8 sm:w-8"
                 onClick={onZoomIn}
                 disabled={scale >= 2.5}
                 aria-label="জুম ইন (Zoom In)"
               >
-                <ZoomIn className="h-4 w-4" />
+                <ZoomIn className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">জুম ইন (+)</TooltipContent>
@@ -404,11 +404,11 @@ export function ReaderToolbar({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 hidden xs:inline-flex"
+                className="h-7 w-7 sm:h-8 sm:w-8 hidden xs:inline-flex"
                 onClick={onFitWidth}
                 aria-label="স্ক্রিন অনুযায়ী ফিট করুন (Fit Width)"
               >
-                <ScanLine className="h-4 w-4" />
+                <ScanLine className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">Fit Width</TooltipContent>
@@ -422,14 +422,14 @@ export function ReaderToolbar({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className="h-7 w-7 sm:h-8 sm:w-8"
                 onClick={onToggleFullscreen}
                 aria-label={isFullscreen ? "ফুলস্ক্রিন থেকে বের হন" : "ফুলস্ক্রিন মোড"}
               >
                 {isFullscreen ? (
-                  <Minimize2 className="h-4 w-4 text-primary" />
+                  <Minimize2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
                 ) : (
-                  <Maximize2 className="h-4 w-4" />
+                  <Maximize2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 )}
               </Button>
             </TooltipTrigger>

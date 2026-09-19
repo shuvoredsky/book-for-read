@@ -60,7 +60,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="bn" suppressHydrationWarning className={inter.variable}>
-      <body className="min-h-screen bg-background text-foreground antialiased selection:bg-primary/20 selection:text-primary font-sans flex flex-col">
+      <body
+        suppressHydrationWarning
+        className="min-h-screen bg-background text-foreground antialiased selection:bg-primary/20 selection:text-primary font-sans flex flex-col"
+      >
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

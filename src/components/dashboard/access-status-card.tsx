@@ -6,8 +6,8 @@ import {
   BookOpen,
   ArrowRight,
   AlertTriangle,
-  FileCheck2,
   ShieldAlert,
+  ShieldCheck,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -54,7 +54,7 @@ export function AccessStatusCard({
             </span>
           </div>
           <CardTitle className="text-xl sm:text-2xl font-bold text-foreground pt-2">
-            আপনার payment অনুমোদিত হয়েছে।
+            আপনার Access সক্রিয় রয়েছে
           </CardTitle>
           <CardDescription className="text-foreground/80">
             বইটির পূর্ণাঙ্গ ডিজিটাল সংস্করণ এখন আপনার জন্য উন্মুক্ত। যেকোনো সময় যেকোনো ডিভাইস থেকে পড়তে পারবেন।
@@ -93,10 +93,10 @@ export function AccessStatusCard({
             </span>
           </div>
           <CardTitle className="text-xl sm:text-2xl font-bold text-foreground pt-2">
-            বইটির রিডার এক্সেস স্থগিত করা হয়েছে।
+            বইটির রিডার এক্সেস স্থগিত করা হয়েছে
           </CardTitle>
           <CardDescription className="text-foreground/80">
-            প্রশাসনিক কারণে আপনার রিডার এক্সেস সাময়িকভাবে স্থগিত রয়েছে। কোনো জিজ্ঞাসা থাকলে বা এক্সেস পুনরুদ্ধারের জন্য সরাসরি সাপোর্টে যোগাযোগ করুন।
+            প্রশাসনিক কারণে আপনার রিডার এক্সেস সাময়িকভাবে স্থগিত রয়েছে। কোনো জিজ্ঞাসা থাকলে বা এক্সেস পুনরুদ্ধারের জন্য সরাসরি Facebook-এ যোগাযোগ করুন।
           </CardDescription>
         </CardHeader>
         <CardFooter className="pt-2 flex flex-col sm:flex-row gap-3">
@@ -108,7 +108,7 @@ export function AccessStatusCard({
           >
             <Button variant="outline" size="lg" className="w-full sm:w-auto gap-2">
               <MessageSquare className="h-4 w-4 text-blue-500" />
-              সাপোর্টে যোগাযোগ করুন (Messenger)
+              Facebook-এ যোগাযোগ করুন
             </Button>
           </a>
         </CardFooter>
@@ -116,7 +116,7 @@ export function AccessStatusCard({
     );
   }
 
-  // STATE 3: PAYMENT PENDING VERIFICATION
+  // STATE 3: PAYMENT PENDING VERIFICATION (If manual payment was recorded)
   if (latestPayment && latestPayment.status === "PENDING") {
     return (
       <Card className="glass-card border-amber-500/30 bg-amber-500/5 relative overflow-hidden">
@@ -132,32 +132,12 @@ export function AccessStatusCard({
             </span>
           </div>
           <CardTitle className="text-xl sm:text-2xl font-bold text-foreground pt-2">
-            আপনার payment verification-এর জন্য অপেক্ষা করছে।
+            আপনার ভেরিফিকেশন প্রক্রিয়াধীন রয়েছে
           </CardTitle>
           <CardDescription className="text-foreground/80">
-            আমাদের এডমিন প্যানেল আপনার ট্রানজেকশন তথ্য যাচাই করছে। ভেরিফিকেশন সম্পন্ন হলে স্বয়ংক্রিয়ভাবে রিডার এক্সেস চালু হবে।
+            এডমিন আপনার তথ্য যাচাই করছেন। ভেরিফিকেশন সম্পন্ন হলে সাথে সাথে রিডার এক্সেস চালু হবে।
           </CardDescription>
         </CardHeader>
-        <CardContent className="pt-1">
-          <div className="rounded-xl border border-amber-500/20 bg-card/60 p-4 space-y-2 text-xs sm:text-sm">
-            <div className="flex justify-between py-1 border-b border-border/40">
-              <span className="text-muted-foreground">পেমেন্ট মেথড:</span>
-              <span className="font-semibold text-foreground">{latestPayment.paymentMethod}</span>
-            </div>
-            <div className="flex justify-between py-1 border-b border-border/40">
-              <span className="text-muted-foreground">ট্রানজেকশন আইডি (TxID):</span>
-              <span className="font-mono font-semibold text-primary">{latestPayment.transactionId}</span>
-            </div>
-            <div className="flex justify-between py-1 border-b border-border/40">
-              <span className="text-muted-foreground">প্রেরক মোবাইল নম্বর:</span>
-              <span className="font-mono font-semibold text-foreground">{latestPayment.senderNumber}</span>
-            </div>
-            <div className="flex justify-between py-1">
-              <span className="text-muted-foreground">জমাকৃত পরিমাণ:</span>
-              <span className="font-bold text-foreground">৳{latestPayment.amount} BDT</span>
-            </div>
-          </div>
-        </CardContent>
         <CardFooter className="pt-2">
           <a
             href={siteConfig.links.messengerContact}
@@ -167,7 +147,7 @@ export function AccessStatusCard({
           >
             <Button variant="outline" size="sm" className="w-full sm:w-auto gap-2">
               <MessageSquare className="h-4 w-4 text-blue-500" />
-              জরুরি প্রয়োজনে মেসেঞ্জারে জানান
+              Facebook-এ যোগাযোগ করুন
             </Button>
           </a>
         </CardFooter>
@@ -175,23 +155,23 @@ export function AccessStatusCard({
     );
   }
 
-  // STATE 4: NO PAYMENT / REJECTED PAYMENT -> PAYMENT INSTRUCTIONS
+  // STATE 4: NO ACTIVE ACCESS -> CLEAN FACEBOOK CONTACT OPTION
   return (
     <Card className="glass-card border-primary/30 relative overflow-hidden">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <Badge variant="outline" className="border-primary/40 text-primary px-3 py-1">
-            বইটি পড়তে পেমেন্ট সম্পন্ন করুন
+            বইয়ের এক্সেস অ্যাক্টিভেশন
           </Badge>
-          <span className="text-xs font-bold text-primary font-mono">
-            ৳১০০ BDT Only
+          <span className="text-xs font-semibold text-muted-foreground">
+            Digital Edition
           </span>
         </div>
         <CardTitle className="text-xl sm:text-2xl font-bold text-foreground pt-2">
-          এই বইটি পড়ার জন্য ১০০ টাকা payment করুন
+          বইটি অ্যাক্টিভ করতে Facebook-এ যোগাযোগ করুন।
         </CardTitle>
         <CardDescription className="text-foreground/80">
-          বিকাশ, নগদ বা রকেটে ১০০ টাকা সেন্ড মানি বা পেমেন্ট করে নিচের বাটন থেকে তথ্য জমা দিন।
+          বইটির পূর্ণাঙ্গ ডিজিটাল সংস্করণ পড়তে এবং এক্সেস চালু করতে আমাদের Facebook মেসেঞ্জারে যোগাযোগ করুন।
         </CardDescription>
       </CardHeader>
 
@@ -200,7 +180,7 @@ export function AccessStatusCard({
           <div className="rounded-xl bg-destructive/10 border border-destructive/20 p-4 text-xs text-destructive flex items-start gap-2.5">
             <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold">পূর্ববর্তী পেমেন্টটি বাতিল হয়েছে</p>
+              <p className="font-semibold">পূর্ববর্তী তথ্য বাতিল হয়েছে</p>
               {latestPayment.adminNote && (
                 <p className="mt-1 text-muted-foreground">এডমিন নোট: {latestPayment.adminNote}</p>
               )}
@@ -208,31 +188,9 @@ export function AccessStatusCard({
           </div>
         )}
 
-        {/* Payment Account Numbers */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="rounded-xl border border-border bg-card/60 p-3 text-center space-y-1">
-            <span className="text-xs font-bold text-rose-500 block">bKash (বিকাশ)</span>
-            <span className="text-xs font-mono font-semibold text-foreground">
-              {process.env.NEXT_PUBLIC_BKASH_NUMBER || "017XXXXXXXX"}
-            </span>
-            <span className="text-[10px] text-muted-foreground block">(Send Money / Payment)</span>
-          </div>
-
-          <div className="rounded-xl border border-border bg-card/60 p-3 text-center space-y-1">
-            <span className="text-xs font-bold text-amber-500 block">Nagad (নগদ)</span>
-            <span className="text-xs font-mono font-semibold text-foreground">
-              {process.env.NEXT_PUBLIC_NAGAD_NUMBER || "018XXXXXXXX"}
-            </span>
-            <span className="text-[10px] text-muted-foreground block">(Send Money)</span>
-          </div>
-
-          <div className="rounded-xl border border-border bg-card/60 p-3 text-center space-y-1">
-            <span className="text-xs font-bold text-purple-500 block">Rocket (রকেট)</span>
-            <span className="text-xs font-mono font-semibold text-foreground">
-              {process.env.NEXT_PUBLIC_ROCKET_NUMBER || "019XXXXXXXX"}
-            </span>
-            <span className="text-[10px] text-muted-foreground block">(Send Money)</span>
-          </div>
+        <div className="rounded-xl border border-border/80 bg-muted/30 p-4 text-xs text-muted-foreground flex items-center gap-2">
+          <ShieldCheck className="h-4 w-4 text-emerald-500 shrink-0" />
+          <span>এডমিন কর্তৃক ম্যানুয়াল ভেরিফিকেশন ও তাৎক্ষণিক এক্সেস প্রদান।</span>
         </div>
       </CardContent>
 
@@ -243,18 +201,15 @@ export function AccessStatusCard({
           rel="noopener noreferrer"
           className="w-full sm:w-auto"
         >
-          <Button variant="outline" size="lg" className="w-full sm:w-auto gap-2">
-            <MessageSquare className="h-4 w-4 text-blue-500" />
-            পেমেন্ট করতে যোগাযোগ করুন
+          <Button
+            variant="gradient"
+            size="lg"
+            className="w-full sm:w-auto gap-2 font-semibold shadow-md shadow-teal-500/20"
+          >
+            <MessageSquare className="h-4 w-4" />
+            Facebook-এ যোগাযোগ করুন
           </Button>
         </a>
-
-        <Link href="/payment" className="w-full sm:w-auto">
-          <Button variant="gradient" size="lg" className="w-full sm:w-auto gap-2 font-semibold shadow-md shadow-teal-500/20">
-            <FileCheck2 className="h-4 w-4" />
-            পেমেন্ট তথ্য সাবমিট করুন
-          </Button>
-        </Link>
       </CardFooter>
     </Card>
   );

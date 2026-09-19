@@ -14,6 +14,7 @@ interface PdfPageProps {
     displayName?: string;
     email?: string;
   };
+  onPageDimensions?: (dimensions: { width: number; height: number }) => void;
   onRenderSuccess?: () => void;
   onRenderError?: (error: Error) => void;
 }
@@ -23,6 +24,7 @@ export function PdfPage({
   pageNumber,
   scale,
   userWatermark,
+  onPageDimensions,
   onRenderSuccess,
   onRenderError,
 }: PdfPageProps) {
@@ -30,6 +32,12 @@ export function PdfPage({
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const activeRenderTaskRef = React.useRef<RenderTask | null>(null);
   const renderCounterRef = React.useRef(0);
+  const onPageDimensionsRef = React.useRef(onPageDimensions);
+  const lastDimensionsRef = React.useRef<{ width: number; height: number } | null>(null);
+
+  React.useEffect(() => {
+    onPageDimensionsRef.current = onPageDimensions;
+  }, [onPageDimensions]);
 
   const [isRendering, setIsRendering] = React.useState(true);
   const [pageSize, setPageSize] = React.useState<{ width: number; height: number }>({
@@ -67,8 +75,27 @@ export function PdfPage({
           return;
         }
 
-        // Calculate viewport with scale
-        const viewport = page.getViewport({ scale });
+        // Extract unscaled page dimensions only if genuinely changed
+        const unscaledViewport = page.getViewport({ scale: 1.0 });
+        const lastDims = lastDimensionsRef.current;
+        if (
+          !lastDims ||
+          Math.abs(lastDims.width - unscaledViewport.width) > 0.5 ||
+          Math.abs(lastDims.height - unscaledViewport.height) > 0.5
+        ) {
+          lastDimensionsRef.current = {
+            width: unscaledViewport.width,
+            height: unscaledViewport.height,
+          };
+          onPageDimensionsRef.current?.({
+            width: unscaledViewport.width,
+            height: unscaledViewport.height,
+          });
+        }
+
+        // Calculate viewport with responsive scale
+        const safeScale = Math.max(0.2, scale);
+        const viewport = page.getViewport({ scale: safeScale });
         const canvas = canvasRef.current;
 
         if (!canvas) {
@@ -82,17 +109,22 @@ export function PdfPage({
           return;
         }
 
-        // HiDPI / Retina Crisp Display Handling
-        const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
-        const displayWidth = Math.floor(viewport.width);
-        const displayHeight = Math.floor(viewport.height);
+        // HiDPI / Retina Crisp Display Handling (capped at 2.5 for memory performance)
+        const dpr = typeof window !== "undefined" ? Math.min(window.devicePixelRatio || 1, 2.5) : 1;
+        const displayWidth = Math.round(viewport.width);
+        const displayHeight = Math.round(viewport.height);
 
-        canvas.width = Math.floor(displayWidth * dpr);
-        canvas.height = Math.floor(displayHeight * dpr);
+        canvas.width = Math.round(displayWidth * dpr);
+        canvas.height = Math.round(displayHeight * dpr);
         canvas.style.width = `${displayWidth}px`;
         canvas.style.height = `${displayHeight}px`;
 
-        setPageSize({ width: displayWidth, height: displayHeight });
+        setPageSize((prev) => {
+          if (prev.width === displayWidth && prev.height === displayHeight) {
+            return prev;
+          }
+          return { width: displayWidth, height: displayHeight };
+        });
 
         const transform = dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : undefined;
 
@@ -147,19 +179,21 @@ export function PdfPage({
   return (
     <div
       ref={containerRef}
-      className="relative flex items-center justify-center mx-auto rounded-xl overflow-hidden shadow-2xl bg-white border border-border/60 transition-all duration-150 select-none"
+      className="relative flex items-center justify-center mx-auto rounded-xl overflow-hidden shadow-2xl bg-white border border-border/60 transition-all duration-150 select-none max-w-full"
       style={{
-        width: pageSize.width,
-        minHeight: pageSize.height,
+        width: `${pageSize.width}px`,
+        maxWidth: "100%",
+        minHeight: `${pageSize.height}px`,
       }}
     >
       {/* HTML5 Canvas Rendering Target */}
       <canvas
         ref={canvasRef}
-        className="block rounded-lg"
+        className="block rounded-lg max-w-full h-auto"
         style={{
           width: `${pageSize.width}px`,
           height: `${pageSize.height}px`,
+          maxWidth: "100%",
         }}
       />
 

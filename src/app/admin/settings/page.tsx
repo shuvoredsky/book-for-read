@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { Phone, DollarSign } from "lucide-react";
+import { MessageSquare, DollarSign, ShieldCheck } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { siteConfig } from "@/config/site";
 
@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "সিস্টেম সেটিংস (Settings)",
-  description: "প্ল্যাটফর্ম কনফিগারেশন, পেমেন্ট নম্বর ও মেসেঞ্জার লিংক",
+  description: "প্ল্যাটফর্ম কনফিগারেশন ও সাপোর্ট চ্যানেল",
 };
 
 export default function AdminSettingsPage() {
@@ -18,7 +18,7 @@ export default function AdminSettingsPage() {
           প্ল্যাটফর্ম সেটিংস (System Settings)
         </h1>
         <p className="text-sm text-muted-foreground">
-          কনফিগারেশন ভেরিয়েবল ও পেমেন্ট চ্যানেলের বর্তমান অবস্থা
+          বইয়ের তথ্য, মূল্য ও সাপোর্ট চ্যানেলের বর্তমান অবস্থা
         </p>
       </div>
 
@@ -50,23 +50,28 @@ export default function AdminSettingsPage() {
         <Card className="glass-card">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <Phone className="h-5 w-5 text-blue-500" />
-              পেমেন্ট ও সাপোর্ট চ্যানেল
+              <MessageSquare className="h-5 w-5 text-blue-500" />
+              সাপোর্ট ও যোগাযোগ চ্যানেল
             </CardTitle>
-            <CardDescription>ম্যানুয়াল পেমেন্ট রিসেপশন নম্বরসমূহ</CardDescription>
+            <CardDescription>গ্রাহক যোগাযোগ ও অ্যাক্টিভেশন চ্যানেল</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 text-xs sm:text-sm">
             <div className="flex justify-between py-1.5 border-b border-border/40">
-              <span className="text-muted-foreground">bKash নম্বর:</span>
-              <span className="font-mono font-semibold">{process.env.NEXT_PUBLIC_BKASH_NUMBER || "017XXXXXXXX"}</span>
+              <span className="text-muted-foreground">পদ্ধতি:</span>
+              <span className="font-semibold text-foreground">সরাসরি Facebook / Messenger যোগাযোগ</span>
             </div>
             <div className="flex justify-between py-1.5 border-b border-border/40">
-              <span className="text-muted-foreground">Nagad নম্বর:</span>
-              <span className="font-mono font-semibold">{process.env.NEXT_PUBLIC_NAGAD_NUMBER || "018XXXXXXXX"}</span>
+              <span className="text-muted-foreground">ভেরিফিকেশন:</span>
+              <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
+                <ShieldCheck className="h-4 w-4" />
+                এডমিন ম্যানুয়াল অ্যাক্টিভেশন
+              </span>
             </div>
             <div className="flex justify-between py-1.5">
               <span className="text-muted-foreground">মেসেঞ্জার সাপোর্ট URL:</span>
-              <span className="font-mono text-xs text-primary truncate max-w-[160px]">{siteConfig.links.messengerContact}</span>
+              <span className="font-mono text-xs text-primary truncate max-w-[200px]">
+                {siteConfig.links.messengerContact}
+              </span>
             </div>
           </CardContent>
         </Card>

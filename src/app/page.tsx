@@ -4,7 +4,6 @@ import {
   CheckCircle2,
   ArrowRight,
   MessageSquare,
-  FileCheck2,
   Clock,
   ShieldAlert,
   Sparkles,
@@ -288,41 +287,28 @@ export default async function HomePage() {
                   <div className="space-y-4 pt-2">
                     <div className="rounded-xl bg-muted/60 border border-border p-3.5 space-y-1">
                       <p className="text-sm font-bold text-foreground">
-                        বইটি পড়তে Payment করুন
+                        বইটি অ্যাক্টিভ করতে Facebook-এ যোগাযোগ করুন।
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        মূল্য: ৳{bookPrice} BDT • সেন্ড মানি বা পেমেন্ট সম্পন্ন করে নিচের বাটনে ক্লিক করুন।
+                        বইটির পূর্ণাঙ্গ ডিজিটাল সংস্করণ পড়তে এবং এক্সেস চালু করতে আমাদের Facebook মেসেঞ্জারে যোগাযোগ করুন।
                       </p>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <a
-                        href={siteConfig.links.messengerContact}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex-1"
+                    <a
+                      href={siteConfig.links.messengerContact}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block"
+                    >
+                      <Button
+                        variant="gradient"
+                        size="lg"
+                        className="w-full gap-2 text-sm font-semibold shadow-md shadow-teal-500/20"
                       >
-                        <Button
-                          variant="outline"
-                          size="lg"
-                          className="w-full gap-2 text-sm font-semibold border-primary/30 hover:bg-primary/5"
-                        >
-                          <MessageSquare className="h-4 w-4 text-blue-500" />
-                          পেমেন্ট করতে যোগাযোগ করুন
-                        </Button>
-                      </a>
-
-                      <Link href="/payment" className="flex-1">
-                        <Button
-                          variant="gradient"
-                          size="lg"
-                          className="w-full gap-2 text-sm font-semibold shadow-md shadow-teal-500/20"
-                        >
-                          <FileCheck2 className="h-4 w-4" />
-                          পেমেন্ট তথ্য সাবমিট করুন
-                        </Button>
-                      </Link>
-                    </div>
+                        <MessageSquare className="h-4 w-4" />
+                        Facebook-এ যোগাযোগ করুন
+                      </Button>
+                    </a>
                   </div>
                 )}
 

@@ -107,6 +107,7 @@ export async function grantAccessAction(
       return accessRecord;
     });
 
+    revalidatePath("/admin/users");
     revalidatePath("/admin/access");
     revalidatePath("/admin/payments");
     revalidatePath("/admin");
@@ -214,6 +215,7 @@ export async function revokeAccessAction(
       return updatedAccess;
     });
 
+    revalidatePath("/admin/users");
     revalidatePath("/admin/access");
     revalidatePath("/admin/payments");
     revalidatePath("/admin");

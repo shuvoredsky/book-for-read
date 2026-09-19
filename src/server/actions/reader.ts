@@ -2,7 +2,6 @@
 
 import { getCurrentUser } from "@/server/auth";
 import { verifyUserBookAccess } from "@/server/access";
-import { getPresignedReadUrl } from "@/lib/b2";
 import type { ActionResponse } from "@/types";
 
 export interface PresignedUrlData {
@@ -100,25 +99,13 @@ export async function getBookReadUrlAction(
     }
 
     const book = verification.book;
-    const objectKey = book.r2ObjectKey || "books/medical-book.pdf";
 
-    // 4. Generate short-lived presigned GET URL (10 minutes = 600 seconds)
-    const EXPIRY_SECONDS = 600;
-    const b2Result = await getPresignedReadUrl(objectKey, EXPIRY_SECONDS);
-
-    if (!b2Result.success || !b2Result.presignedUrl) {
-      return {
-        success: false,
-        error: b2Result.error || "সুরক্ষিত রিডিং লিংক তৈরি করতে সমস্যা হয়েছে। অনুগ্রহ করে কিছুক্ষণ পর চেষ্টা করুন।",
-      };
-    }
-
-    // 5. Return ONLY the temporary URL to client (never save to DB)
+    // 4. Return protected same-origin streaming endpoint to client (never expose raw B2 URL)
     return {
       success: true,
       data: {
-        presignedUrl: b2Result.presignedUrl,
-        expiresIn: EXPIRY_SECONDS,
+        presignedUrl: `/api/books/${cleanSlug}/pdf`,
+        expiresIn: 3600,
         bookTitle: book.title,
         totalPages: book.totalPages,
         userWatermark: `@${user.username} (${user.email})`,

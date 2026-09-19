@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
+import { nextCookies } from "better-auth/next-js";
 import prisma from "@/lib/prisma";
 
 export const auth = betterAuth({
@@ -36,6 +37,7 @@ export const auth = betterAuth({
       maxAge: 60 * 5, // 5 minutes
     },
   },
+  plugins: [nextCookies()],
   secret: process.env.BETTER_AUTH_SECRET || "medical_book_secure_auth_secret_key_32chars_min",
   baseURL: process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
   trustedOrigins: [

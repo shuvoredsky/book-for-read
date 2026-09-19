@@ -1,16 +1,40 @@
 import { Metadata } from "next";
-import { Users } from "lucide-react";
-import { Card, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { requireAdmin } from "@/server/auth";
+import { getAdminUsersAction } from "@/server/actions/admin-users";
+import { UsersTable } from "@/components/admin/users-table";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "ব্যবহারকারী ব্যবস্থাপনা (User Management)",
-  description: "ইউজারদের তালিকা, ফিল্টারিং ও একাউন্ট নিয়ন্ত্রণ",
+  description: "নিবন্ধিত ব্যবহারকারীদের তালিকা, স্ট্যাটাস, বুক এক্সেস ও ব্যান/আনব্যান নিয়ন্ত্রণ",
 };
 
-export default function AdminUsersPage() {
+interface AdminUsersPageProps {
+  searchParams: Promise<{
+    page?: string;
+    status?: string;
+    role?: string;
+    search?: string;
+  }>;
+}
+
+export default async function AdminUsersPage({ searchParams }: AdminUsersPageProps) {
+  const admin = await requireAdmin();
+  const search = await searchParams;
+
+  const page = search.page ? parseInt(search.page, 10) : 1;
+  const status = search.status || "ALL";
+  const role = search.role || "ALL";
+  const searchKeyword = search.search || "";
+
+  const { users, totalCount, pageSize } = await getAdminUsersAction({
+    page,
+    status,
+    role,
+    search: searchKeyword,
+  });
+
   return (
     <div className="space-y-6">
       <div className="pb-4 border-b border-border/60">
@@ -18,26 +42,20 @@ export default function AdminUsersPage() {
           ব্যবহারকারী ব্যবস্থাপনা (Users)
         </h1>
         <p className="text-sm text-muted-foreground">
-          নিবন্ধিত ব্যবহারকারীদের সার্চ, ফিল্টার, একাউন্ট সাসপেনশন ও হিস্ট্রি ট্র্যাকিং
+          নিবন্ধিত ব্যবহারকারীদের সার্চ, ফিল্টার, একাউন্ট সাসপেনশন (Ban/Unban) ও বুক এক্সেস নিয়ন্ত্রণ
         </p>
       </div>
 
-      <Card className="glass-card text-center p-12 space-y-4">
-        <div className="w-14 h-14 rounded-2xl bg-blue-500/10 text-blue-500 flex items-center justify-center mx-auto">
-          <Users className="h-7 w-7" />
-        </div>
-        <div className="space-y-1">
-          <Badge variant="outline" className="text-xs">
-            Phase 7 Architecture
-          </Badge>
-          <CardTitle className="text-xl font-bold">
-            ইউজার ম্যানেজমেন্ট মডিউল
-          </CardTitle>
-          <CardDescription className="max-w-md mx-auto">
-            এই মডিউলটি পরবর্তী ফেজে সম্পূর্ণ সার্চ, ফিল্টার, সাসপেনশন ও পারমিশন কন্ট্রোল সহ চালু হবে।
-          </CardDescription>
-        </div>
-      </Card>
+      <UsersTable
+        users={users}
+        totalCount={totalCount}
+        currentPage={page}
+        pageSize={pageSize}
+        currentStatus={status}
+        currentRole={role}
+        currentSearch={searchKeyword}
+        currentAdminId={admin.id}
+      />
     </div>
   );
 }

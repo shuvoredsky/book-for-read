@@ -59,7 +59,12 @@ export function PdfReader({
     Math.max(1, Math.min(initialPage, initialTotalPages))
   );
   const [totalPages, setTotalPages] = React.useState<number>(initialTotalPages);
-  const [scale, setScale] = React.useState<number>(1.0);
+  const [userZoom, setUserZoom] = React.useState<number>(1.0);
+  const [containerWidth, setContainerWidth] = React.useState<number>(0);
+  const [unscaledPageSize, setUnscaledPageSize] = React.useState<{ width: number; height: number }>({
+    width: 595,
+    height: 842,
+  });
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
   const [loadingMessage, setLoadingMessage] = React.useState<string>("বইটি লোড হচ্ছে...");
   const [error, setError] = React.useState<string | null>(null);
@@ -120,26 +125,31 @@ export function PdfReader({
 
         const signedUrl = urlRes.data.presignedUrl;
 
-        // Initialize PDF.js Document
+        // Initialize PDF.js Document with same-origin credentials & on-demand Range streaming
         const loadingTask = pdfjsLib.getDocument({
           url: signedUrl,
-          withCredentials: false,
-          disableAutoFetch: false,
+          withCredentials: true,
+          disableAutoFetch: true, // Only fetch requested byte ranges on demand
           disableStream: false,
+          rangeChunkSize: 65536,  // 64 KB partial chunks
         });
-
-        loadingTask.onProgress = ({ loaded, total }: { loaded: number; total: number }) => {
-          if (total > 0) {
-            const pct = Math.round((loaded / total) * 100);
-            setLoadingMessage(`বইটি লোড হচ্ছে (${pct}%)...`);
-          }
-        };
 
         const doc = await loadingTask.promise;
 
         pdfDocRef.current = doc;
         setPdfDoc(doc);
         setTotalPages(doc.numPages);
+
+        // Pre-fetch initial unscaled dimensions once for immediate responsive layout calculation
+        try {
+          const firstPage = await doc.getPage(1);
+          const v1 = firstPage.getViewport({ scale: 1.0 });
+          setUnscaledPageSize({ width: v1.width, height: v1.height });
+          firstPage.cleanup();
+        } catch {
+          // Fallback to default A4
+        }
+
         setIsLoading(false);
 
         // Extract document outline/TOC asynchronously
@@ -321,27 +331,93 @@ export function PdfReader({
     [bookmarks]
   );
 
+  // Dynamic Responsive Container Width Measurement & Observer
+  const updateContainerWidth = React.useCallback(() => {
+    if (!scrollAreaRef.current) return;
+    // Account for inner padding (16px total on mobile, 32px on tablet/desktop)
+    const padding = typeof window !== "undefined" && window.innerWidth < 640 ? 16 : 32;
+    const availableWidth = scrollAreaRef.current.clientWidth - padding;
+    if (availableWidth > 0) {
+      setContainerWidth(availableWidth);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    updateContainerWidth();
+
+    const el = scrollAreaRef.current;
+    let observer: ResizeObserver | null = null;
+
+    if (el && typeof ResizeObserver !== "undefined") {
+      observer = new ResizeObserver(() => {
+        updateContainerWidth();
+      });
+      observer.observe(el);
+    }
+
+    const handleWindowResize = () => {
+      updateContainerWidth();
+    };
+
+    window.addEventListener("resize", handleWindowResize);
+    window.addEventListener("orientationchange", handleWindowResize);
+
+    return () => {
+      if (observer) {
+        observer.disconnect();
+      }
+      window.removeEventListener("resize", handleWindowResize);
+      window.removeEventListener("orientationchange", handleWindowResize);
+    };
+  }, [updateContainerWidth, pdfDoc]);
+
+  // Memoized page dimensions handler with numeric threshold guard to prevent infinite re-render loops
+  const handlePageDimensions = React.useCallback(
+    (dims: { width: number; height: number }) => {
+      setUnscaledPageSize((prev) => {
+        if (
+          Math.abs(prev.width - dims.width) < 0.5 &&
+          Math.abs(prev.height - dims.height) < 0.5
+        ) {
+          return prev;
+        }
+        return dims;
+      });
+    },
+    []
+  );
+
+  // Compute effective render scale to fit available viewport width without horizontal clipping
+  const effectiveScale = React.useMemo(() => {
+    const baseWidth = unscaledPageSize.width || 595;
+    if (!containerWidth || containerWidth <= 0) {
+      return userZoom;
+    }
+    // Available viewport width capped at 850px for desktop reading comfort
+    const targetFitWidth = Math.min(containerWidth, 850);
+    const fitScale = targetFitWidth / baseWidth;
+    return Math.max(0.25, +(fitScale * userZoom).toFixed(3));
+  }, [containerWidth, unscaledPageSize.width, userZoom]);
+
   // 4. Zoom Handlers
   const handleZoomIn = React.useCallback(() => {
-    setScale((prev) => Math.min(2.5, +(prev + 0.15).toFixed(2)));
+    setUserZoom((prev) => Math.min(2.5, +(prev + 0.15).toFixed(2)));
   }, []);
 
   const handleZoomOut = React.useCallback(() => {
-    setScale((prev) => Math.max(0.5, +(prev - 0.15).toFixed(2)));
+    setUserZoom((prev) => Math.max(0.5, +(prev - 0.15).toFixed(2)));
   }, []);
 
   const handleResetZoom = React.useCallback(() => {
-    setScale(1.0);
-  }, []);
+    setUserZoom(1.0);
+    updateContainerWidth();
+  }, [updateContainerWidth]);
 
   const handleFitWidth = React.useCallback(() => {
-    if (!scrollAreaRef.current) return;
-    const containerWidth = scrollAreaRef.current.clientWidth - 48;
-    const standardPageWidth = 600;
-    const calculatedScale = Math.max(0.6, Math.min(2.0, +(containerWidth / standardPageWidth).toFixed(2)));
-    setScale(calculatedScale);
-    toast.success(`স্ক্রিন অনুযায়ী ফিট করা হয়েছে (${Math.round(calculatedScale * 100)}%)`);
-  }, []);
+    setUserZoom(1.0);
+    updateContainerWidth();
+    toast.success("স্ক্রিন অনুযায়ী ফিট করা হয়েছে (100%)");
+  }, [updateContainerWidth]);
 
   // 5. Fullscreen API Toggle
   const handleToggleFullscreen = React.useCallback(async () => {
@@ -444,7 +520,7 @@ export function PdfReader({
           <ReaderToolbar
             currentPage={currentPage}
             totalPages={totalPages}
-            scale={scale}
+            scale={userZoom}
             isFullscreen={isFullscreen}
             bookmarks={bookmarks}
             isCurrentPageBookmarked={isCurrentPageBookmarked}
@@ -466,7 +542,7 @@ export function PdfReader({
           {/* Canvas Scroll & Viewport Area */}
           <div
             ref={scrollAreaRef}
-            className="w-full overflow-auto max-h-[82vh] py-6 px-2 sm:px-4 flex justify-center rounded-2xl border border-border/40 bg-muted/20 dark:bg-muted/10 backdrop-blur-sm custom-scrollbar"
+            className="w-full overflow-auto max-h-[82vh] py-4 sm:py-6 px-1 sm:px-4 flex justify-center rounded-2xl border border-border/40 bg-muted/20 dark:bg-muted/10 backdrop-blur-sm custom-scrollbar"
             tabIndex={0}
             role="region"
             aria-label={`${bookTitle} - রিডিং ক্যানভাস এলাকা`}
@@ -474,8 +550,9 @@ export function PdfReader({
             <PdfPage
               pdfDoc={pdfDoc}
               pageNumber={currentPage}
-              scale={scale}
+              scale={effectiveScale}
               userWatermark={userWatermark}
+              onPageDimensions={handlePageDimensions}
               onRenderError={(err) => {
                 console.error("Page render error:", err);
                 toast.error(`পৃষ্ঠা ${currentPage} রেন্ডার করতে সমস্যা হয়েছে`);
