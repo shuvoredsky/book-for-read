@@ -4,6 +4,13 @@ import * as React from "react";
 import * as pdfjsLib from "pdfjs-dist";
 import type { PDFDocumentProxy } from "pdfjs-dist";
 import { toast } from "sonner";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Bookmark,
+  ListOrdered,
+  Search,
+} from "lucide-react";
 import { getBookReadUrlAction } from "@/server/actions/reader";
 import {
   getReadingProgressAction,
@@ -14,6 +21,7 @@ import {
   createBookmarkAction,
   deleteBookmarkAction,
 } from "@/server/actions/bookmark";
+import { Button } from "@/components/ui/button";
 import { ReaderToolbar } from "./reader-toolbar";
 import { PdfPage } from "./pdf-page";
 import { ReaderLoading } from "./reader-loading";
@@ -66,11 +74,9 @@ export function PdfReader({
     height: 842,
   });
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
-  const [loadingMessage, setLoadingMessage] = React.useState<string>("বইটি লোড হচ্ছে...");
+  const [loadingMessage, setLoadingMessage] = React.useState<string>("আপনার বইটি লোড হচ্ছে, একটু অপেক্ষা করুন...");
   const [downloadProgress, setDownloadProgress] = React.useState<{
     percentage: number;
-    loadedMb: string;
-    totalMb: string;
   } | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [isExpired, setIsExpired] = React.useState<boolean>(false);
@@ -95,8 +101,8 @@ export function PdfReader({
       setDownloadProgress(null);
       setLoadingMessage(
         isRetry
-          ? "রিডিং সেশন রিফ্রেশ করা হচ্ছে..."
-          : "সুরক্ষিত ভল্ট থেকে বইটি লোড করা হচ্ছে..."
+          ? "আপনার রিডিং সেশন রিফ্রেশ করা হচ্ছে..."
+          : "আপনার বইটি লোড হচ্ছে, একটু অপেক্ষা করুন..."
       );
 
       try {
@@ -132,14 +138,14 @@ export function PdfReader({
         const signedUrl = urlRes.data.presignedUrl;
 
         // Stream PDF binary directly into browser memory with progress tracking
-        setLoadingMessage("বইটি ডাউনলোড করা হচ্ছে...");
+        setLoadingMessage("আপনার জন্য বইটি প্রস্তুত করা হচ্ছে...");
         const response = await fetch(signedUrl, { credentials: "include" });
 
         if (!response.ok) {
           if (response.status === 401 || response.status === 403) {
             setError("বইটির এক্সেস পাওয়া যায়নি। অনুগ্রহ করে আপনার অ্যাকাউন্ট ভেরিফাই করুন।");
           } else {
-            setError(`বইটি লোড করতে সমস্যা হয়েছে (Error Code: ${response.status})।`);
+            setError(`বইটি লোড করতে সমস্যা হয়েছে (ত্রুটি কোড: ${response.status})।`);
           }
           setIsLoading(false);
           return;
@@ -147,7 +153,6 @@ export function PdfReader({
 
         const contentLengthHeader = response.headers.get("content-length");
         const totalBytes = contentLengthHeader ? parseInt(contentLengthHeader, 10) : 0;
-        const totalMb = totalBytes > 0 ? (totalBytes / (1024 * 1024)).toFixed(1) : null;
 
         if (!response.body) {
           throw new Error("ReadableStream is not supported by this browser environment.");
@@ -167,13 +172,9 @@ export function PdfReader({
 
             if (totalBytes > 0) {
               const percentage = Math.min(100, Math.round((loadedBytes / totalBytes) * 100));
-              const loadedMb = (loadedBytes / (1024 * 1024)).toFixed(1);
               setDownloadProgress({
                 percentage,
-                loadedMb,
-                totalMb: totalMb || "45.7",
               });
-              setLoadingMessage(`বইটি প্রস্তুত করা হচ্ছে (${loadedMb} MB / ${totalMb || "45.7"} MB)...`);
             }
           }
         }
@@ -186,7 +187,7 @@ export function PdfReader({
           offset += chunk.length;
         }
 
-        setLoadingMessage("পিডিএফ ক্যানভাস প্রস্তুত হচ্ছে...");
+        setLoadingMessage("বইয়ের পৃষ্ঠাগুলো সাজানো হচ্ছে...");
 
         // Initialize PDF.js Document with in-memory buffer
         const loadingTask = pdfjsLib.getDocument({
@@ -230,9 +231,9 @@ export function PdfReader({
           errMessage.includes("Expired")
         ) {
           setIsExpired(true);
-          setError("রিডিং লিংকের মেয়াদ শেষ হয়ে গেছে। আবার চেষ্টা বাটনে ক্লিক করে নতুন লিংক নিন।");
+          setError("রিডিং সেশনের মেয়াদ শেষ হয়েছে। আবার চেষ্টা বাটনে ক্লিক করে নতুন লিংক নিন।");
         } else {
-          setError("বইটি লোড করা যাচ্ছে না। আপনার ইন্টারনেট সংযোগ যাচাই করে আবার চেষ্টা করুন।");
+          setError("বইটি লোড করা যাচ্ছে না। আপনার ইন্টারনেট সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।");
         }
         setIsLoading(false);
       }
@@ -566,8 +567,6 @@ export function PdfReader({
         <ReaderLoading
           message={loadingMessage}
           progressPercentage={downloadProgress?.percentage}
-          loadedMb={downloadProgress?.loadedMb}
-          totalMb={downloadProgress?.totalMb}
         />
       )}
 
@@ -646,8 +645,82 @@ export function PdfReader({
             textCache={textCacheRef}
           />
 
-          {/* Bottom Quick Page Indicator for Mobile */}
-          <div className="flex items-center justify-between w-full max-w-lg px-2 text-xs text-muted-foreground">
+          {/* Bottom Responsive Navigation & Controls */}
+          {/* 1. Mobile Touch-Friendly Controls (visible on < sm screens) */}
+          <div className="flex sm:hidden items-center justify-between w-full max-w-md px-3 py-2 rounded-2xl bg-card/95 backdrop-blur-md border border-border/80 shadow-lg">
+            {/* Prev Page Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage <= 1}
+              className="h-8 px-2.5 gap-1 rounded-xl text-xs font-medium"
+              aria-label="পূর্ববর্তী পৃষ্ঠা"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              <span>আগে</span>
+            </Button>
+
+            {/* Page Count Badge */}
+            <div className="px-2.5 py-1 rounded-lg bg-muted/80 text-xs font-semibold text-primary font-mono">
+              {currentPage} / {totalPages}
+            </div>
+
+            {/* Mobile Action Tools: Bookmark, TOC, Search */}
+            <div className="flex items-center gap-1">
+              <Button
+                variant={isCurrentPageBookmarked ? "default" : "ghost"}
+                size="sm"
+                onClick={handleToggleBookmark}
+                className={`h-8 w-8 p-0 rounded-xl ${
+                  isCurrentPageBookmarked
+                    ? "bg-amber-500 hover:bg-amber-600 text-white"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                aria-label="বুকমার্ক করুন"
+              >
+                <Bookmark
+                  className={`h-4 w-4 ${isCurrentPageBookmarked ? "fill-current" : ""}`}
+                />
+              </Button>
+
+              <Button
+                variant={isTocOpen ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setIsTocOpen(true)}
+                className="h-8 w-8 p-0 rounded-xl text-muted-foreground hover:text-foreground"
+                aria-label="সূচিপত্র"
+              >
+                <ListOrdered className="h-4 w-4" />
+              </Button>
+
+              <Button
+                variant={isSearchOpen ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setIsSearchOpen(true)}
+                className="h-8 w-8 p-0 rounded-xl text-muted-foreground hover:text-foreground"
+                aria-label="খুঁজুন"
+              >
+                <Search className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Next Page Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage >= totalPages}
+              className="h-8 px-2.5 gap-1 rounded-xl text-xs font-medium"
+              aria-label="পরবর্তী পৃষ্ঠা"
+            >
+              <span>পরে</span>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* 2. Desktop Keyboard Shortcut Footer (visible on sm+ screens) */}
+          <div className="hidden sm:flex items-center justify-between w-full max-w-lg px-2 text-xs text-muted-foreground">
             <span className="font-mono">
               শর্টকাট: <kbd className="px-1.5 py-0.5 rounded bg-muted border font-mono">←</kbd> / <kbd className="px-1.5 py-0.5 rounded bg-muted border font-mono">→</kbd> | বুকমার্ক: <kbd className="px-1.5 py-0.5 rounded bg-muted border font-mono">B</kbd> | সার্চ: <kbd className="px-1.5 py-0.5 rounded bg-muted border font-mono">Ctrl+F</kbd> | সূচিপত্র: <kbd className="px-1.5 py-0.5 rounded bg-muted border font-mono">T</kbd>
             </span>

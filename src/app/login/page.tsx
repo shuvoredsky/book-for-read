@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BookOpen, LogIn, Lock, Mail, Loader2, AlertCircle } from "lucide-react";
+import { BookOpen, LogIn, Lock, Mail, Loader2, AlertCircle, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { loginUserAction } from "@/server/actions/auth";
 import { Button } from "@/components/ui/button";
@@ -169,10 +169,23 @@ export default function LoginPage() {
         </form>
       </Card>
 
+      {/* Trust & Support Contact */}
+      <div className="mt-4 text-center z-10">
+        <a
+          href={siteConfig.links.messengerContact}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors py-1.5 px-3 rounded-full hover:bg-muted/50 border border-transparent hover:border-border/60"
+        >
+          <MessageCircle className="h-3.5 w-3.5 text-primary" />
+          <span>কোনো সমস্যা হচ্ছে? আমাদের সাথে যোগাযোগ করুন</span>
+        </a>
+      </div>
+
       {/* Back to Home */}
       <Link
         href="/"
-        className="mt-6 text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+        className="mt-4 text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
       >
         <span>← মূল পাতায় ফিরে যান</span>
       </Link>

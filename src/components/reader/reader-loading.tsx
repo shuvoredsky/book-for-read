@@ -8,22 +8,18 @@ interface ReaderLoadingProps {
   message?: string;
   progressText?: string;
   progressPercentage?: number | null;
-  loadedMb?: string | null;
-  totalMb?: string | null;
 }
 
 export function ReaderLoading({
-  message = "বইটি লোড হচ্ছে...",
-  progressText = "সুরক্ষিত স্টোরেজ থেকে বইয়ের পাতাগুলো প্রস্তুত হচ্ছে, অনুগ্রহ করে অপেক্ষা করুন...",
+  message = "আপনার বইটি লোড হচ্ছে, একটু অপেক্ষা করুন...",
+  progressText = "আপনার জন্য বইটির পৃষ্ঠাগুলো সুন্দরভাবে প্রস্তুত করা হচ্ছে...",
   progressPercentage = null,
-  loadedMb = null,
-  totalMb = null,
 }: ReaderLoadingProps) {
   const hasProgress = typeof progressPercentage === "number" && progressPercentage >= 0;
 
   return (
-    <div className="w-full flex flex-col items-center justify-center min-h-[550px] p-4 sm:p-6 animate-in fade-in duration-300">
-      <Card className="glass-card max-w-md w-full p-6 sm:p-8 text-center space-y-6 shadow-2xl border-primary/25 bg-card/85 backdrop-blur-md rounded-2xl">
+    <div className="w-full flex flex-col items-center justify-center min-h-[500px] p-4 sm:p-6 animate-in fade-in duration-300">
+      <Card className="glass-card max-w-md w-full p-6 sm:p-8 text-center space-y-6 shadow-2xl border-primary/25 bg-card/90 backdrop-blur-md rounded-2xl">
         {/* Animated Icon Glow */}
         <div className="relative mx-auto w-20 h-20 flex items-center justify-center">
           <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping opacity-60" />
@@ -34,7 +30,7 @@ export function ReaderLoading({
 
         {/* Title and Subtitle */}
         <div className="space-y-2">
-          <div className="flex items-center justify-center gap-2.5 text-foreground font-bold text-lg">
+          <div className="flex items-center justify-center gap-2.5 text-foreground font-bold text-base sm:text-lg">
             <Loader2 className="h-5 w-5 animate-spin text-primary shrink-0" />
             <h3 className="tracking-tight">{message}</h3>
           </div>
@@ -46,13 +42,13 @@ export function ReaderLoading({
         {/* Download Progress Bar */}
         {hasProgress && (
           <div className="space-y-2 pt-1 animate-in fade-in duration-200">
-            <div className="flex items-center justify-between text-xs font-mono font-medium">
-              <span className="text-muted-foreground flex items-center gap-1">
+            <div className="flex items-center justify-between text-xs font-medium">
+              <span className="text-muted-foreground flex items-center gap-1.5">
                 <Sparkles className="h-3.5 w-3.5 text-primary animate-pulse" />
-                {loadedMb && totalMb ? `${loadedMb} MB / ${totalMb} MB` : "ডাউনলোড হচ্ছে..."}
+                <span>বইটি প্রস্তুত হচ্ছে</span>
               </span>
-              <span className="text-primary font-bold">
-                {Math.min(100, Math.max(0, Math.round(progressPercentage!)))}%
+              <span className="text-primary font-bold font-mono">
+                {Math.min(100, Math.max(0, Math.round(progressPercentage!)))}% সম্পন্ন
               </span>
             </div>
 
@@ -68,10 +64,10 @@ export function ReaderLoading({
           </div>
         )}
 
-        {/* Security Footer Badge */}
-        <div className="pt-3 border-t border-border/40 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground font-mono">
+        {/* Reassuring Security Footer Badge */}
+        <div className="pt-3 border-t border-border/40 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
           <ShieldCheck className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-          <span>প্রোটেক্টেড ইন-মেমোরি এনক্রিপ্টেড রিডার</span>
+          <span>নিরাপদ ও কপিরাইট-সুরক্ষিত ডিজিটাল সংস্করণ</span>
         </div>
       </Card>
     </div>
