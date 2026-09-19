@@ -1,24 +1,26 @@
 export const siteConfig = {
-  name: "Medical Clinical Handbook",
-  nameBn: "মেডিকেল ক্লিনিক্যাল হ্যান্ডবুক",
+  name: "BoiGhor",
+  nameBn: "বইঘর",
+  tagline: "ডিজিটাল বুক রিডার",
   description:
-    "A comprehensive, high-yield digital clinical handbook for medical students, interns, and healthcare professionals in Bangladesh.",
+    "একটি আধুনিক, সহজ ও সুরক্ষিত ডিজিটাল বই পড়ার প্ল্যাটফর্ম।",
   descriptionBn:
-    "মেডিকেল শিক্ষার্থী, ইন্টার্ন ডক্টর এবং স্বাস্থ্যসেবা পেশাজীবীদের জন্য একটি পূর্ণাঙ্গ ডিজিটাল ক্লিনিক্যাল গাইড।",
+    "একটি আধুনিক, সহজ ও সুরক্ষিত ডিজিটাল বই পড়ার প্ল্যাটফর্ম।",
   book: {
-    title: "Essential Clinical Medicine & Practical Guide",
-    titleBn: "এসেনশিয়াল ক্লিনিক্যাল মেডিসিন ও প্র্যাকটিক্যাল গাইড",
+    title: "বিস্ময় মানবদেহ",
+    subtitle: "১২১ দিনের মেডিকেল যাত্রা",
+    author: "Shuvo Chakrabrati",
     price: 100, // 100 BDT as per specification
     currency: "BDT",
     slug: "medical-handbook",
-    totalPages: 240,
-    r2ObjectKey: "books/medical-book.pdf",
+    totalPages: 384,
+    r2ObjectKey: "books/121_days_medical_book.pdf",
+    description:
+      "মানবদেহের গঠন ও কার্যপ্রণালীর চমকপ্রদ ব্যাখ্যা এবং শিক্ষণীয় অন্তর্দৃষ্টি নিয়ে রচিত পূর্ণাঙ্গ ডিজিটাল বই।",
     highlights: [
-      "কমপ্লিট ওয়ার্ড রাউন্ড গাইড এবং ক্লিনিক্যাল কেস ডায়াগনোসিস",
-      "জরুরি চিকিৎসা ও প্রেসক্রিপশন হ্যান্ডলিং প্রোটোকল",
       "স্মার্ট অনলাইন রিডার (মোবাইল, ট্যাবলেট ও ডেস্কটপ সাপোর্ট)",
-      "বুকমার্কিং (৩টি পর্যন্ত) এবং কন্টিনিউ রিডিং সুবিধা",
-      "সার্চ ও চ্যাপ্টারভিত্তিক টেবিল অব কন্টেন্টস",
+      "বুকমার্কিং এবং রিয়েল-টাইম রিডিং প্রগ্রেস ট্র্যাকিং",
+      "ইন-বুক টেক্সট সার্চ ও চ্যাপ্টারভিত্তিক টেবিল অব কন্টেন্টস",
     ],
   },
   links: {
@@ -27,13 +29,11 @@ export const siteConfig = {
       process.env.NEXT_PUBLIC_MESSENGER_URL ||
       process.env.FACEBOOK_MESSENGER_URL ||
       "https://m.me/your-facebook-page",
-    whatsappContact: "https://wa.me/8801700000000",
+    whatsappContact: process.env.NEXT_PUBLIC_WHATSAPP_URL || "https://wa.me/8801700000000",
   },
   mainNav: [
-    { title: "হোম (Home)", href: "/" },
-    { title: "বইয়ের বিবরণ (About Book)", href: "/#about" },
-    { title: "ফিচারসমূহ (Features)", href: "/#features" },
-    { title: "পেমেন্ট পদ্ধতি (Payment)", href: "/#pricing" },
+    { title: "হোম", href: "/" },
+    { title: "নিয়মাবলী", href: "/rules" },
   ],
 };
 

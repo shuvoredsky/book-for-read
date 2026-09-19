@@ -13,8 +13,8 @@ import { ReaderView } from "@/components/reader/reader-view";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "অনলাইন রিডার (Medical Book Reader)",
-  description: "সুরক্ষিত Backblaze B2 ডিজিটাল মেডিকেল বই ক্যানভাস রিডার",
+  title: "অনলাইন রিডার (Digital Book Reader)",
+  description: "সুরক্ষিত ক্যানভাস ডিজিটাল বই রিডার",
 };
 
 interface ReaderPageProps {

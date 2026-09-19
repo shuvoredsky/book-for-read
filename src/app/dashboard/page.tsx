@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "ইউজার ড্যাশবোর্ড (Dashboard)",
-  description: "আপনার মেডিকেল বুক রিডিং ড্যাশবোর্ড, বুকমার্ক এবং প্রগ্রেস ট্র্যাকার",
+  description: "আপনার ডিজিটাল বই রিডিং ড্যাশবোর্ড, বুকমার্ক এবং প্রগ্রেস ট্র্যাকার",
 };
 
 export default async function DashboardPage() {

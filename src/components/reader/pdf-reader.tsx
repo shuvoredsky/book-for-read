@@ -44,7 +44,7 @@ interface PdfReaderProps {
 export function PdfReader({
   bookSlug,
   bookTitle,
-  initialTotalPages = 240,
+  initialTotalPages = 384,
   initialPage = 1,
   userWatermark,
 }: PdfReaderProps) {

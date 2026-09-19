@@ -79,10 +79,10 @@ export default function RegisterPage() {
         </div>
         <div className="flex flex-col">
           <span className="text-xl font-bold tracking-tight text-foreground">
-            {siteConfig.name}
+            {siteConfig.nameBn}
           </span>
           <span className="text-xs font-medium text-muted-foreground">
-            {siteConfig.nameBn}
+            {siteConfig.name}
           </span>
         </div>
       </Link>

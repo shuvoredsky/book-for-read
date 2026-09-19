@@ -104,7 +104,7 @@ export function BookPdfUploader({
           </span>
         </div>
         <CardTitle className="text-xl font-bold text-foreground pt-1">
-          মেডিকেল বই PDF আপলোড ও পরিবর্তন
+          ডিজিটাল বই PDF আপলোড ও পরিবর্তন
         </CardTitle>
         <CardDescription>
           সুরক্ষিত ব্যাকব্লেজ B2 বাকেটে বইয়ের পিডিএফ ফাইলটি আপলোড করুন। ফাইলটি কোনোভাবেই পাবলিক থাকবে না।
@@ -188,7 +188,7 @@ export function BookPdfUploader({
                 value={pagesCount}
                 onChange={(e) => setPagesCount(e.target.value)}
                 disabled={isLoading}
-                placeholder="240"
+                placeholder="384"
                 className="text-xs font-mono"
               />
             </div>

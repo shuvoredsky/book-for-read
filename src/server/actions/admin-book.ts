@@ -66,7 +66,7 @@ export async function uploadBookPdfAction(
     }
 
     // 6. Update Book record in Prisma
-    const totalPages = totalPagesStr ? parseInt(totalPagesStr, 10) : 240;
+    const totalPages = totalPagesStr ? parseInt(totalPagesStr, 10) : 384;
 
     const updatedBook = await prisma.book.upsert({
       where: { slug: "medical-handbook" },
@@ -75,13 +75,13 @@ export async function uploadBookPdfAction(
         ...(totalPages && !isNaN(totalPages) ? { totalPages } : {}),
       },
       create: {
-        title: "Essential Clinical Medicine & Practical Guide",
+        title: "বিস্ময় মানবদেহ",
         slug: "medical-handbook",
         description:
-          "A comprehensive, high-yield digital clinical handbook for medical students, interns, and healthcare professionals in Bangladesh.",
+          "১২১ দিনের মেডিকেল যাত্রা - লেখক: Shuvo Chakrabrati। শিক্ষণীয় ডিজিটাল মেডিকেল গাইডবুক।",
         price: 100,
         r2ObjectKey: targetObjectKey,
-        totalPages: totalPages || 240,
+        totalPages: totalPages || 384,
         isActive: true,
       },
     });

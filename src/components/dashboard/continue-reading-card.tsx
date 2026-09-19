@@ -26,7 +26,7 @@ export function ContinueReadingCard({
   totalBookPages,
 }: ContinueReadingCardProps) {
   const currentPage = readingProgress?.currentPage || 1;
-  const totalPages = readingProgress?.totalPages || totalBookPages || 240;
+  const totalPages = readingProgress?.totalPages || totalBookPages || 384;
   const percentage = readingProgress
     ? Math.round(readingProgress.progressPercentage)
     : 0;

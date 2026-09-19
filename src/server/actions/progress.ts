@@ -60,7 +60,7 @@ export async function getReadingProgressAction(
         success: true,
         data: {
           currentPage: 1,
-          totalPages: book.totalPages || 240,
+          totalPages: book.totalPages || 384,
           progressPercentage: 0,
           lastReadAt: new Date(),
         },

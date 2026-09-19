@@ -5,6 +5,7 @@ import { UserNav } from "@/components/layout/user-nav";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Shield } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { siteConfig } from "@/config/site";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +33,7 @@ export default async function AdminLayout({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-bold text-base text-foreground">Medical Book Admin</span>
+                <span className="font-bold text-base text-foreground">{siteConfig.nameBn} এডমিন</span>
                 <Badge className="bg-purple-600 text-white hover:bg-purple-700 text-[10px] h-4">
                   Super Admin
                 </Badge>
