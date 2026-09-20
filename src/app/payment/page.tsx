@@ -96,7 +96,7 @@ export default async function PaymentPage() {
                   href={siteConfig.links.messengerContact}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block w-full"
+                  className="block w-full cursor-pointer"
                 >
                   <Button
                     variant="gradient"

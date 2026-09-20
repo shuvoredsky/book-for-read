@@ -175,7 +175,7 @@ export default function LoginPage() {
           href={siteConfig.links.messengerContact}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors py-1.5 px-3 rounded-full hover:bg-muted/50 border border-transparent hover:border-border/60"
+          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors py-1.5 px-3 rounded-full hover:bg-muted/50 border border-transparent hover:border-border/60 cursor-pointer"
         >
           <MessageCircle className="h-3.5 w-3.5 text-primary" />
           <span>কোনো সমস্যা হচ্ছে? আমাদের সাথে যোগাযোগ করুন</span>

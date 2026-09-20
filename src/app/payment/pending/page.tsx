@@ -142,7 +142,7 @@ export default async function PaymentPendingPage() {
                 href={siteConfig.links.messengerContact}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full sm:w-1/2"
+                className="w-full sm:w-1/2 cursor-pointer"
               >
                 <Button variant="outline" className="w-full gap-2">
                   <MessageSquare className="h-4 w-4 text-blue-500" />

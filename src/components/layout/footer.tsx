@@ -1,10 +1,15 @@
 import Link from "next/link";
 import { BookOpen, MessageSquare, FileText } from "lucide-react";
 import { siteConfig } from "@/config/site";
+import { cn } from "@/lib/utils";
 
-export function Footer() {
+interface FooterProps {
+  className?: string;
+}
+
+export function Footer({ className }: FooterProps = {}) {
   return (
-    <footer className="border-t border-border/50 bg-card/30 backdrop-blur-md py-6">
+    <footer className={cn("border-t border-border/50 bg-card/30 backdrop-blur-md py-6", className)}>
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
           {/* Brand & Tagline */}
@@ -24,7 +29,7 @@ export function Footer() {
           <div className="flex flex-wrap items-center gap-4 sm:gap-6">
             <Link
               href="/rules"
-              className="flex items-center gap-1.5 hover:text-foreground transition-colors"
+              className="flex items-center gap-1.5 hover:text-foreground transition-colors cursor-pointer"
             >
               <FileText className="h-3.5 w-3.5 text-primary" />
               <span>নিয়মাবলী / ব্যবহারবিধি</span>
@@ -34,7 +39,7 @@ export function Footer() {
               href={siteConfig.links.messengerContact}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 hover:text-foreground transition-colors"
+              className="flex items-center gap-1.5 hover:text-foreground transition-colors cursor-pointer"
             >
               <MessageSquare className="h-3.5 w-3.5 text-blue-500" />
               <span>যোগাযোগ (Support)</span>

@@ -104,9 +104,9 @@ export function AccessStatusCard({
             href={siteConfig.links.messengerContact}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full sm:w-auto"
+            className="w-full sm:w-auto cursor-pointer"
           >
-            <Button variant="outline" size="lg" className="w-full sm:w-auto gap-2">
+            <Button variant="outline" size="lg" className="w-full sm:w-auto gap-2 cursor-pointer">
               <MessageSquare className="h-4 w-4 text-blue-500" />
               Facebook-এ যোগাযোগ করুন
             </Button>
@@ -143,9 +143,9 @@ export function AccessStatusCard({
             href={siteConfig.links.messengerContact}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full sm:w-auto"
+            className="w-full sm:w-auto cursor-pointer"
           >
-            <Button variant="outline" size="sm" className="w-full sm:w-auto gap-2">
+            <Button variant="outline" size="sm" className="w-full sm:w-auto gap-2 cursor-pointer">
               <MessageSquare className="h-4 w-4 text-blue-500" />
               Facebook-এ যোগাযোগ করুন
             </Button>
@@ -199,12 +199,12 @@ export function AccessStatusCard({
           href={siteConfig.links.messengerContact}
           target="_blank"
           rel="noopener noreferrer"
-          className="w-full sm:w-auto"
+          className="w-full sm:w-auto cursor-pointer"
         >
           <Button
             variant="gradient"
             size="lg"
-            className="w-full sm:w-auto gap-2 font-semibold shadow-md shadow-teal-500/20"
+            className="w-full sm:w-auto gap-2 font-semibold shadow-md shadow-teal-500/20 cursor-pointer"
           >
             <MessageSquare className="h-4 w-4" />
             Facebook-এ যোগাযোগ করুন

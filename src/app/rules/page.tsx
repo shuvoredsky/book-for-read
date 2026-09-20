@@ -135,6 +135,7 @@ export default function RulesPage() {
                 href={siteConfig.links.messengerContact}
                 target="_blank"
                 rel="noopener noreferrer"
+                className="cursor-pointer"
               >
                 <Button variant="outline" size="sm" className="gap-2 shrink-0">
                   <MessageSquare className="h-4 w-4 text-blue-500" />

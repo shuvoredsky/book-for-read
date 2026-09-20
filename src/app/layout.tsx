@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "bn_BD",
-    url: siteConfig.links.messengerContact,
+    url: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
     title: `${siteConfig.nameBn} - ${siteConfig.tagline}`,
     description: siteConfig.description,
     siteName: siteConfig.nameBn,

@@ -1,18 +1,17 @@
 import Link from "next/link";
 import {
   BookOpen,
-  CheckCircle2,
   ArrowRight,
-  MessageSquare,
-  Clock,
-  ShieldAlert,
   Sparkles,
   User,
+  ExternalLink,
   ShieldCheck,
-  MessageCircle,
-  Smartphone,
-  Bookmark,
-  Search,
+  Clock,
+  ShieldAlert,
+  Stethoscope,
+  Dna,
+  HeartPulse,
+  Pill,
 } from "lucide-react";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/server/auth";
@@ -20,10 +19,22 @@ import { siteConfig } from "@/config/site";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
 
 export const dynamic = "force-dynamic";
+
+function FacebookIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+    </svg>
+  );
+}
 
 export default async function HomePage() {
   // 1. Fetch current user session server-side (safe fallback)
@@ -86,7 +97,6 @@ export default async function HomePage() {
   const bookAuthor = siteConfig.book.author;
   const bookPrice = book?.price || siteConfig.book.price;
   const bookSlug = book?.slug || siteConfig.book.slug;
-  const bookDescription = book?.description || siteConfig.book.description;
   const totalPages = book?.totalPages || siteConfig.book.totalPages;
 
   const hasActiveAccess = bookAccess?.status === "ACTIVE";
@@ -94,363 +104,211 @@ export default async function HomePage() {
   const isPendingPayment = latestPayment?.status === "PENDING" && !hasActiveAccess;
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex h-dvh flex-col justify-between bg-background relative overflow-hidden">
+      {/* Decorative Medical Background Elements (Subtle & Ambient) */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden select-none z-0">
+        {/* Soft Radial Ambient Glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[340px] sm:w-[560px] h-[340px] sm:h-[560px] bg-gradient-to-tr from-emerald-500/10 via-teal-500/10 to-cyan-500/5 rounded-full blur-3xl" />
+
+        {/* Subtle ECG Heartbeat Pulse Waveform SVG */}
+        <svg
+          className="absolute top-1/2 -translate-y-1/2 left-0 w-full h-28 sm:h-36 opacity-[0.045] dark:opacity-[0.08] text-primary"
+          viewBox="0 0 1200 120"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          preserveAspectRatio="none"
+        >
+          <path
+            d="M0,60 L280,60 L310,60 L325,30 L340,95 L355,10 L370,110 L385,45 L400,60 L700,60 L730,60 L745,30 L760,95 L775,10 L790,110 L805,45 L820,60 L1200,60"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+
+        {/* Top-Left: Stethoscope icon */}
+        <div className="absolute -top-4 -left-4 sm:top-8 sm:left-12 opacity-[0.045] dark:opacity-[0.075] text-primary -rotate-12">
+          <Stethoscope className="w-24 h-24 sm:w-36 sm:h-36" />
+        </div>
+
+        {/* Top-Right: DNA Helix icon */}
+        <div className="absolute top-2 -right-3 sm:top-10 sm:right-16 opacity-[0.045] dark:opacity-[0.075] text-emerald-500 rotate-12">
+          <Dna className="w-20 h-20 sm:w-32 sm:h-32" />
+        </div>
+
+        {/* Bottom-Left: Heartbeat / Activity icon */}
+        <div className="absolute bottom-10 -left-3 sm:bottom-16 sm:left-16 opacity-[0.045] dark:opacity-[0.075] text-teal-500 rotate-6">
+          <HeartPulse className="w-20 h-20 sm:w-32 sm:h-32" />
+        </div>
+
+        {/* Bottom-Right: Medical Pill icon */}
+        <div className="absolute bottom-8 -right-4 sm:bottom-14 sm:right-12 opacity-[0.045] dark:opacity-[0.075] text-cyan-600 -rotate-12">
+          <Pill className="w-24 h-24 sm:w-36 sm:h-36" />
+        </div>
+      </div>
+
       <Navbar />
 
-      <main className="flex-1 flex items-center justify-center py-6 sm:py-12">
-        <div className="container mx-auto max-w-4xl px-4 sm:px-6">
-          {/* Main Book Showcase Card */}
-          <Card className="glass-card border-border/80 shadow-2xl overflow-hidden rounded-3xl">
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 p-5 sm:p-8 md:p-10 items-center">
-              
-              {/* Left Column: Book Cover Preview & Direct Call-to-Action */}
-              <div className="md:col-span-5 flex flex-col items-center">
-                {/* Book Cover */}
-                <div className="relative w-full max-w-[250px] aspect-[3/4.1] rounded-2xl bg-gradient-to-br from-emerald-900 via-teal-950 to-slate-950 p-5 text-white flex flex-col justify-between shadow-2xl border border-white/15 ring-1 ring-black/30 group">
-                  {/* Top Badge */}
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-semibold tracking-wider uppercase text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-500/30">
-                      ডিজিটাল সংস্করণ
-                    </span>
-                    <span className="text-xs font-mono text-white/80 font-bold">
-                      ৳{bookPrice} BDT
-                    </span>
-                  </div>
-
-                  {/* Book Title Block */}
-                  <div className="space-y-2 text-center my-auto">
-                    <div className="mx-auto w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center backdrop-blur-md mb-2 border border-white/20">
-                      <BookOpen className="h-5 w-5 text-emerald-300" />
-                    </div>
-                    <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white leading-tight">
-                      {bookTitle}
-                    </h2>
-                    <p className="text-xs text-emerald-200/90 font-medium">
-                      {bookSubtitle}
-                    </p>
-                    <p className="text-[11px] text-white/60 font-mono">
-                      মোট পৃষ্ঠা: {totalPages}
-                    </p>
-                  </div>
-
-                  {/* Author & Footer */}
-                  <div className="pt-2.5 border-t border-white/10 text-center">
-                    <p className="text-[11px] text-white/75 font-medium">
-                      লেখক: {bookAuthor}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Direct Call-to-Action Section Below Cover (Visible immediately on Mobile & Desktop) */}
-                <div className="w-full max-w-[250px] space-y-2.5 mt-4">
-                  {/* CASE A: Logged-in User with Active Access */}
-                  {user && hasActiveAccess && (
-                    <Link href={`/reader/${bookSlug}`} className="block w-full">
-                      <Button
-                        variant="gradient"
-                        size="lg"
-                        className="w-full gap-2 text-sm font-bold shadow-lg shadow-teal-500/25 py-5 rounded-xl"
-                      >
-                        <BookOpen className="h-4 w-4" />
-                        বইটি পড়ুন (পড়া শুরু করুন)
-                        <ArrowRight className="h-4 w-4" />
-                      </Button>
-                    </Link>
-                  )}
-
-                  {/* CASE B: Logged-in User without Access / Pending */}
-                  {user && !hasActiveAccess && (
-                    <Link href="/dashboard" className="block w-full">
-                      <Button
-                        variant="gradient"
-                        size="lg"
-                        className="w-full gap-2 text-sm font-bold shadow-lg shadow-teal-500/20 py-5 rounded-xl"
-                      >
-                        <BookOpen className="h-4 w-4" />
-                        ড্যাশবোর্ডে যান
-                        <ArrowRight className="h-4 w-4" />
-                      </Button>
-                    </Link>
-                  )}
-
-                  {/* CASE C: Logged-out Visitor — Clear Top-of-Page CTA */}
-                  {!user && (
-                    <div className="space-y-2 w-full">
-                      {/* Primary Read / Start Button */}
-                      <Link href="/login" className="block w-full">
-                        <Button
-                          variant="gradient"
-                          size="lg"
-                          className="w-full gap-2 text-sm font-bold shadow-lg shadow-teal-500/25 py-5 rounded-xl"
-                        >
-                          <BookOpen className="h-4 w-4" />
-                          বইটি পড়ুন
-                          <ArrowRight className="h-4 w-4" />
-                        </Button>
-                      </Link>
-
-                      {/* Quick Login & Register Row */}
-                      <div className="flex gap-2 w-full">
-                        <Link href="/login" className="flex-1">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-full text-xs font-semibold gap-1.5 rounded-xl border-border/80"
-                          >
-                            <User className="h-3.5 w-3.5" />
-                            লগইন
-                          </Button>
-                        </Link>
-                        <Link href="/register" className="flex-1">
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            className="w-full text-xs font-semibold gap-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20"
-                          >
-                            <Sparkles className="h-3.5 w-3.5" />
-                            রেজিস্ট্রেশন
-                          </Button>
-                        </Link>
-                      </div>
-
-                      {/* Trust & Support Contact Link */}
-                      <div className="text-center pt-1">
-                        <a
-                          href={siteConfig.links.messengerContact}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-primary transition-colors py-0.5 px-2 rounded-full"
-                        >
-                          <MessageCircle className="h-3 w-3 text-primary" />
-                          <span>কোনো সমস্যা হচ্ছে? আমাদের সাথে যোগাযোগ করুন</span>
-                        </a>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Right Column: Book Details & Dynamic State Information */}
-              <div className="md:col-span-7 space-y-5">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="border-primary/30 text-primary px-2.5 py-0.5 text-xs font-semibold">
-                      মেডিকেল গাইডবুক
-                    </Badge>
-                    <span className="text-xs text-muted-foreground font-medium">
-                      লেখক: {bookAuthor}
-                    </span>
-                  </div>
-
-                  <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
-                    {bookTitle}
-                  </h1>
-
-                  <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
-                    {bookSubtitle}
-                  </p>
-
-                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed pt-1">
-                    {bookDescription}
-                  </p>
-                </div>
-
-                {/* Features Pills */}
-                <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground pt-1">
-                  <div className="flex items-center gap-2 p-2 rounded-xl bg-muted/40 border border-border/40">
-                    <Smartphone className="h-4 w-4 text-primary shrink-0" />
-                    <span>সব ডিভাইসে রেসপনসিভ</span>
-                  </div>
-                  <div className="flex items-center gap-2 p-2 rounded-xl bg-muted/40 border border-border/40">
-                    <Bookmark className="h-4 w-4 text-amber-500 shrink-0" />
-                    <span>বুকমার্ক ও প্রগ্রেস সেভ</span>
-                  </div>
-                  <div className="flex items-center gap-2 p-2 rounded-xl bg-muted/40 border border-border/40">
-                    <Search className="h-4 w-4 text-blue-500 shrink-0" />
-                    <span>ইন-বুক টেক্সট সার্চ</span>
-                  </div>
-                  <div className="flex items-center gap-2 p-2 rounded-xl bg-muted/40 border border-border/40">
-                    <ShieldCheck className="h-4 w-4 text-emerald-500 shrink-0" />
-                    <span>সুরক্ষিত অনলাইন রিডার</span>
-                  </div>
-                </div>
-
-                {/* Pricing block */}
-                <div className="flex items-baseline gap-3 pt-2 border-t border-border/60">
-                  <span className="text-2xl sm:text-3xl font-black text-foreground">
-                    ৳{bookPrice}
-                  </span>
-                  <span className="text-xs text-muted-foreground font-medium">
-                    (এককালীন পেমেন্টে আজীবন অনলাইন রিডার এক্সেস)
-                  </span>
-                </div>
-
-                {/* DYNAMIC RIGHT-SIDE STATES */}
-
-                {/* STATE 1: Logged-out Visitor */}
-                {!user && (
-                  <div className="space-y-3 pt-1">
-                    <div className="p-3.5 rounded-2xl bg-muted/40 border border-border/70 space-y-1.5">
-                      <p className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                        <Sparkles className="h-3.5 w-3.5 text-primary" />
-                        <span>সহজ ২ ধাপে রিডিং এক্সেস নিন:</span>
-                      </p>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        ১. একাউন্ট লগইন বা রেজিস্টার করুন &bull; ২. মেসেঞ্জারে যোগাযোগ করে এক্সেস চালু করুন।
-                      </p>
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <Link href="/login" className="flex-1">
-                        <Button variant="outline" className="w-full gap-2 rounded-xl font-semibold">
-                          <User className="h-4 w-4" />
-                          লগইন করুন
-                        </Button>
-                      </Link>
-                      <Link href="/register" className="flex-1">
-                        <Button variant="gradient" className="w-full gap-2 font-semibold shadow-md shadow-teal-500/20 rounded-xl">
-                          <Sparkles className="h-4 w-4" />
-                          রেজিস্ট্রেশন করুন
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                )}
-
-                {/* STATE 2: Logged-in Active User */}
-                {user && hasActiveAccess && (
-                  <div className="space-y-3 pt-1">
-                    <div className="rounded-2xl bg-emerald-500/10 border border-emerald-500/25 p-3.5 flex items-center gap-3 text-emerald-700 dark:text-emerald-300">
-                      <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0" />
-                      <div>
-                        <p className="text-sm font-bold">আপনার Access Active</p>
-                        <p className="text-xs opacity-90">আপনি বইটি যেকোনো সময় পড়তে পারবেন।</p>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <Link href={`/reader/${bookSlug}`} className="flex-1">
-                        <Button
-                          variant="gradient"
-                          size="lg"
-                          className="w-full gap-2 text-sm font-semibold shadow-lg shadow-teal-500/20 rounded-xl"
-                        >
-                          <BookOpen className="h-4 w-4" />
-                          বই পড়ুন (Read Book)
-                          <ArrowRight className="h-4 w-4" />
-                        </Button>
-                      </Link>
-                      <Link href="/dashboard">
-                        <Button variant="outline" size="lg" className="w-full sm:w-auto rounded-xl">
-                          ড্যাশবোর্ড
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                )}
-
-                {/* STATE 3: Logged-in User with Pending Payment */}
-                {user && isPendingPayment && (
-                  <div className="space-y-3 pt-1">
-                    <div className="rounded-2xl bg-amber-500/10 border border-amber-500/25 p-3.5 flex items-center gap-3 text-amber-700 dark:text-amber-300">
-                      <Clock className="h-5 w-5 text-amber-500 shrink-0 animate-pulse" />
-                      <div>
-                        <p className="text-sm font-bold">আপনার payment verification-এর জন্য অপেক্ষা করছে</p>
-                        <p className="text-xs opacity-90">এডমিন ভেরিফিকেশন সম্পন্ন হলে এক্সেস চালু হবে।</p>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <Link href="/payment/pending" className="flex-1">
-                        <Button variant="outline" className="w-full gap-2 text-xs rounded-xl">
-                          পেমেন্ট স্ট্যাটাস দেখুন
-                        </Button>
-                      </Link>
-                      <a
-                        href={siteConfig.links.messengerContact}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex-1"
-                      >
-                        <Button variant="gradient" className="w-full gap-2 text-xs rounded-xl">
-                          <MessageSquare className="h-4 w-4 text-blue-500" />
-                          মেসেঞ্জারে জানান
-                        </Button>
-                      </a>
-                    </div>
-                  </div>
-                )}
-
-                {/* STATE 4: Logged-in User with Revoked Access */}
-                {user && isRevoked && (
-                  <div className="space-y-3 pt-1">
-                    <div className="rounded-2xl bg-destructive/10 border border-destructive/20 p-3.5 flex items-center gap-3 text-destructive">
-                      <ShieldAlert className="h-5 w-5 shrink-0" />
-                      <div>
-                        <p className="text-sm font-bold">এক্সেস স্থগিত (Access Revoked)</p>
-                        <p className="text-xs opacity-90">সহায়তার জন্য সাপোর্টে যোগাযোগ করুন।</p>
-                      </div>
-                    </div>
-
-                    <a
-                      href={siteConfig.links.messengerContact}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block"
-                    >
-                      <Button variant="outline" className="w-full gap-2 rounded-xl">
-                        <MessageSquare className="h-4 w-4 text-blue-500" />
-                        সাপোর্টে যোগাযোগ করুন
-                      </Button>
-                    </a>
-                  </div>
-                )}
-
-                {/* STATE 5: Logged-in Unpaid User (No access, no pending payment) */}
-                {user && !hasActiveAccess && !isPendingPayment && !isRevoked && (
-                  <div className="space-y-3 pt-1">
-                    <div className="rounded-2xl bg-muted/60 border border-border p-3.5 space-y-1">
-                      <p className="text-sm font-bold text-foreground">
-                        বইটি অ্যাক্টিভ করতে Facebook-এ যোগাযোগ করুন।
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        বইটির পূর্ণাঙ্গ ডিজিটাল সংস্করণ পড়তে এবং এক্সেস চালু করতে আমাদের Facebook মেসেঞ্জারে যোগাযোগ করুন।
-                      </p>
-                    </div>
-
-                    <a
-                      href={siteConfig.links.messengerContact}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block"
-                    >
-                      <Button
-                        variant="gradient"
-                        size="lg"
-                        className="w-full gap-2 text-sm font-semibold shadow-md shadow-teal-500/20 rounded-xl"
-                      >
-                        <MessageSquare className="h-4 w-4" />
-                        Facebook-এ যোগাযোগ করুন
-                      </Button>
-                    </a>
-                  </div>
-                )}
-
-                {/* Bottom Trust Indicators */}
-                <div className="pt-3 border-t border-border/40 flex items-center justify-between text-[11px] text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
-                    সুরক্ষিত ক্যানভাস রিডার
-                  </span>
-                  <span>সব ডিভাইসে ব্যবহারযোগ্য</span>
-                </div>
-              </div>
+      <main className="flex-1 flex items-center justify-center px-3 sm:px-4 py-2 sm:py-4 relative z-10 overflow-hidden my-auto">
+        <div className="w-full max-w-[320px] sm:max-w-[360px] flex flex-col items-center">
+          {/* Book Cover */}
+          <div className="relative w-full max-w-[195px] sm:max-w-[225px] aspect-[3/3.9] rounded-xl sm:rounded-2xl bg-gradient-to-br from-emerald-900 via-teal-950 to-slate-950 p-3.5 sm:p-4 text-white flex flex-col justify-between shadow-2xl border border-white/15 ring-1 ring-black/40 group transition-transform duration-300 hover:scale-[1.02]">
+            {/* Top Badge */}
+            <div className="flex items-center justify-between">
+              <span className="text-[9px] sm:text-[10px] font-semibold tracking-wider uppercase text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                ডিজিটাল সংস্করণ
+              </span>
+              <span className="text-[11px] sm:text-xs font-mono text-white/90 font-bold">
+                ৳{bookPrice} BDT
+              </span>
             </div>
-          </Card>
+
+            {/* Book Title Block */}
+            <div className="space-y-1 sm:space-y-1.5 text-center my-auto">
+              <div className="mx-auto w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-white/10 flex items-center justify-center backdrop-blur-md mb-1 border border-white/20 shadow-inner">
+                <BookOpen className="h-4 w-4 sm:h-4.5 sm:w-4.5 text-emerald-300" />
+              </div>
+              <h1 className="text-base sm:text-xl font-black tracking-tight text-white leading-tight">
+                {bookTitle}
+              </h1>
+              <p className="text-[11px] sm:text-xs text-emerald-200/90 font-medium">
+                {bookSubtitle}
+              </p>
+              <p className="text-[10px] sm:text-[11px] text-white/60 font-mono">
+                মোট পৃষ্ঠা: {totalPages}
+              </p>
+            </div>
+
+            {/* Author & Footer */}
+            <div className="pt-1.5 sm:pt-2 border-t border-white/10 text-center">
+              <p className="text-[10px] sm:text-[11px] text-white/75 font-medium">
+                লেখক: {bookAuthor}
+              </p>
+            </div>
+          </div>
+
+          {/* Direct Call-to-Action Section Below Cover */}
+          <div className="w-full max-w-[215px] sm:max-w-[245px] space-y-2 mt-3 sm:mt-4">
+            {/* CASE A: Logged-in User with Active Access */}
+            {user && hasActiveAccess && (
+              <div className="space-y-2 w-full">
+                <div className="flex items-center justify-center gap-1.5 py-0.5 text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  <span>এক্সেস সক্রিয় আছে</span>
+                </div>
+                <Link href={`/reader/${bookSlug}`} className="block w-full">
+                  <Button
+                    variant="gradient"
+                    size="default"
+                    className="w-full gap-2 text-xs sm:text-sm font-bold shadow-lg shadow-teal-500/25 py-2.5 sm:py-3 rounded-xl cursor-pointer"
+                  >
+                    <BookOpen className="h-4 w-4" />
+                    বইটি পড়ুন (পড়া শুরু করুন)
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Button>
+                </Link>
+                <Link href="/dashboard" className="block w-full">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full text-xs font-semibold rounded-xl border-border/80 bg-background/60 hover:bg-background backdrop-blur-xs cursor-pointer h-8 sm:h-9"
+                  >
+                    ড্যাশবোর্ডে যান
+                  </Button>
+                </Link>
+              </div>
+            )}
+
+            {/* CASE B: Logged-in User without Access / Pending / Revoked */}
+            {user && !hasActiveAccess && (
+              <div className="space-y-2 w-full">
+                {isPendingPayment && (
+                  <div className="flex items-center justify-center gap-1.5 py-0.5 text-xs text-amber-600 dark:text-amber-400 font-semibold">
+                    <Clock className="h-3.5 w-3.5 animate-pulse" />
+                    <span>পেমেন্ট যাচাই চলছে</span>
+                  </div>
+                )}
+                {isRevoked && (
+                  <div className="flex items-center justify-center gap-1.5 py-0.5 text-xs text-rose-600 dark:text-rose-400 font-semibold">
+                    <ShieldAlert className="h-3.5 w-3.5" />
+                    <span>এক্সেস স্থগিত আছে</span>
+                  </div>
+                )}
+                <Link href="/dashboard" className="block w-full">
+                  <Button
+                    variant="gradient"
+                    size="default"
+                    className="w-full gap-2 text-xs sm:text-sm font-bold shadow-lg shadow-teal-500/20 py-2.5 sm:py-3 rounded-xl cursor-pointer"
+                  >
+                    <BookOpen className="h-4 w-4" />
+                    ড্যাশবোর্ডে যান
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Button>
+                </Link>
+              </div>
+            )}
+
+            {/* CASE C: Logged-out Visitor — Clear CTA */}
+            {!user && (
+              <div className="space-y-2 w-full">
+                {/* Primary Read / Start Button */}
+                <Link href="/login" className="block w-full">
+                  <Button
+                    variant="gradient"
+                    size="default"
+                    className="w-full gap-2 text-xs sm:text-sm font-bold shadow-lg shadow-teal-500/25 py-2.5 sm:py-3 rounded-xl cursor-pointer"
+                  >
+                    <BookOpen className="h-4 w-4" />
+                    বইটি পড়ুন
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Button>
+                </Link>
+
+                {/* Quick Login & Register Row */}
+                <div className="flex gap-2 w-full">
+                  <Link href="/login" className="flex-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full text-xs font-semibold gap-1 rounded-xl border-border/80 bg-background/60 hover:bg-background backdrop-blur-xs cursor-pointer h-8 sm:h-9"
+                    >
+                      <User className="h-3 w-3" />
+                      লগইন
+                    </Button>
+                  </Link>
+                  <Link href="/register" className="flex-1">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="w-full text-xs font-semibold gap-1 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 backdrop-blur-xs cursor-pointer h-8 sm:h-9"
+                    >
+                      <Sparkles className="h-3 w-3" />
+                      রেজিস্ট্রেশন
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {/* Prominent, Clearly Clickable Facebook Contact Pill Button for All Users */}
+            <div className="pt-1 text-center w-full">
+              <a
+                href={siteConfig.links.messengerContact}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex items-center justify-center gap-1.5 text-[11px] sm:text-xs font-medium text-foreground/85 hover:text-primary transition-all py-1.5 sm:py-2 px-2.5 sm:px-3 rounded-xl sm:rounded-2xl bg-card/75 hover:bg-card/95 dark:bg-card/60 dark:hover:bg-card/90 border border-border/80 hover:border-primary/50 shadow-xs backdrop-blur-sm cursor-pointer text-center leading-snug"
+              >
+                <FacebookIcon className="h-3.5 w-3.5 text-[#1877F2] shrink-0 group-hover:scale-110 transition-transform" />
+                <span>পেমেন্ট সংক্রান্ত সাহায্যের জন্য যোগাযোগ করুন</span>
+                <ExternalLink className="h-3 w-3 opacity-60 group-hover:opacity-100 shrink-0 transition-opacity" />
+              </a>
+            </div>
+          </div>
         </div>
       </main>
 
-      <Footer />
+      <Footer className="py-2.5 sm:py-3 text-[11px] border-t border-border/40" />
     </div>
   );
 }

@@ -24,11 +24,11 @@ export const siteConfig = {
     ],
   },
   links: {
-    // Configurable Facebook / Messenger payment contact URL
+    // Direct Facebook profile contact URL (used across all CTAs and support links)
     messengerContact:
       process.env.NEXT_PUBLIC_MESSENGER_URL ||
       process.env.FACEBOOK_MESSENGER_URL ||
-      "https://m.me/your-facebook-page",
+      "https://www.facebook.com/sk.shuvo.129794",
     whatsappContact: process.env.NEXT_PUBLIC_WHATSAPP_URL || "https://wa.me/8801700000000",
   },
   mainNav: [
