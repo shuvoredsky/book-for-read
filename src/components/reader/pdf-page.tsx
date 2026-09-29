@@ -179,21 +179,19 @@ export function PdfPage({
   return (
     <div
       ref={containerRef}
-      className="relative flex items-center justify-center mx-auto rounded-xl overflow-hidden shadow-2xl bg-white border border-border/60 transition-all duration-150 select-none max-w-full"
+      className="relative flex items-center justify-center mx-auto rounded-xl overflow-hidden shadow-2xl bg-white border border-border/60 transition-all duration-150 select-none shrink-0"
       style={{
         width: `${pageSize.width}px`,
-        maxWidth: "100%",
         minHeight: `${pageSize.height}px`,
       }}
     >
       {/* HTML5 Canvas Rendering Target */}
       <canvas
         ref={canvasRef}
-        className="block rounded-lg max-w-full h-auto"
+        className="block rounded-lg h-auto shrink-0"
         style={{
           width: `${pageSize.width}px`,
           height: `${pageSize.height}px`,
-          maxWidth: "100%",
         }}
       />
 

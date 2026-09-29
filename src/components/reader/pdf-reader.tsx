@@ -395,13 +395,19 @@ export function PdfReader({
   // Dynamic Responsive Container Width Measurement & Observer
   const updateContainerWidth = React.useCallback(() => {
     if (!scrollAreaRef.current) return;
-    // Account for inner padding (16px total on mobile, 32px on tablet/desktop)
-    const padding = typeof window !== "undefined" && window.innerWidth < 640 ? 16 : 32;
-    const availableWidth = scrollAreaRef.current.clientWidth - padding;
-    if (availableWidth > 0) {
-      setContainerWidth(availableWidth);
+    const doc = typeof document !== "undefined" ? (document as Document & { webkitFullscreenElement?: Element }) : null;
+    const isFS = isFullscreen || !!(doc?.fullscreenElement || doc?.webkitFullscreenElement);
+    const clientWidth = scrollAreaRef.current.clientWidth;
+    if (clientWidth <= 0) return;
+
+    let availableWidth = clientWidth;
+    if (!isFS) {
+      // Account for inner padding in normal mode
+      const padding = typeof window !== "undefined" && window.innerWidth < 640 ? 8 : 16;
+      availableWidth = Math.max(clientWidth - padding, 280);
     }
-  }, []);
+    setContainerWidth(availableWidth);
+  }, [isFullscreen]);
 
   React.useEffect(() => {
     updateContainerWidth();
@@ -454,11 +460,13 @@ export function PdfReader({
     if (!containerWidth || containerWidth <= 0) {
       return userZoom;
     }
-    // Available viewport width capped at 850px for desktop reading comfort
-    const targetFitWidth = Math.min(containerWidth, 850);
+    // In fullscreen mode, take the full container width with zero squeezed margins.
+    // In normal reading mode on desktop, cap at 900px for reading comfort.
+    const isFS = isFullscreen;
+    const targetFitWidth = isFS ? containerWidth : Math.min(containerWidth, 900);
     const fitScale = targetFitWidth / baseWidth;
     return Math.max(0.25, +(fitScale * userZoom).toFixed(3));
-  }, [containerWidth, unscaledPageSize.width, userZoom]);
+  }, [containerWidth, unscaledPageSize.width, userZoom, isFullscreen]);
 
   // 4. Zoom Handlers
   const handleZoomIn = React.useCallback(() => {
@@ -480,16 +488,88 @@ export function PdfReader({
     toast.success("স্ক্রিন অনুযায়ী ফিট করা হয়েছে (100%)");
   }, [updateContainerWidth]);
 
+  // Touch Pinch-to-Zoom Gesture Handlers (Mobile & Tablet)
+  const touchStartDistRef = React.useRef<number | null>(null);
+  const startZoomRef = React.useRef<number>(1.0);
+
+  const handleTouchStart = React.useCallback(
+    (e: React.TouchEvent<HTMLDivElement>) => {
+      if (e.touches.length === 2) {
+        const t1 = e.touches[0];
+        const t2 = e.touches[1];
+        const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+        touchStartDistRef.current = dist;
+        startZoomRef.current = userZoom;
+      }
+    },
+    [userZoom]
+  );
+
+  const handleTouchMove = React.useCallback((e: React.TouchEvent<HTMLDivElement>) => {
+    if (
+      e.touches.length === 2 &&
+      touchStartDistRef.current !== null &&
+      touchStartDistRef.current > 0
+    ) {
+      const t1 = e.touches[0];
+      const t2 = e.touches[1];
+      const currentDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+      const ratio = currentDist / touchStartDistRef.current;
+      const targetZoom = +(startZoomRef.current * ratio).toFixed(2);
+      const clampedZoom = Math.min(2.5, Math.max(0.5, targetZoom));
+      setUserZoom(clampedZoom);
+    }
+  }, []);
+
+  const handleTouchEnd = React.useCallback((e: React.TouchEvent<HTMLDivElement>) => {
+    if (e.touches.length < 2) {
+      touchStartDistRef.current = null;
+    }
+  }, []);
+
+  // Trackpad pinch-to-zoom / Ctrl+Wheel listener on canvas scroll area
+  React.useEffect(() => {
+    const el = scrollAreaRef.current;
+    if (!el) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      if (e.ctrlKey) {
+        e.preventDefault();
+        const delta = e.deltaY < 0 ? 0.1 : -0.1;
+        setUserZoom((prev) => Math.min(2.5, Math.max(0.5, +(prev + delta).toFixed(2))));
+      }
+    };
+
+    el.addEventListener("wheel", handleWheel, { passive: false });
+    return () => el.removeEventListener("wheel", handleWheel);
+  }, []);
+
   // 5. Fullscreen API Toggle
   const handleToggleFullscreen = React.useCallback(async () => {
     if (!containerRef.current) return;
 
     try {
-      if (!document.fullscreenElement) {
-        await containerRef.current.requestFullscreen();
+      const doc = document as Document & {
+        webkitFullscreenElement?: Element;
+        webkitExitFullscreen?: () => Promise<void>;
+      };
+      const container = containerRef.current as HTMLDivElement & {
+        webkitRequestFullscreen?: () => Promise<void>;
+      };
+
+      if (!document.fullscreenElement && !doc.webkitFullscreenElement) {
+        if (container.requestFullscreen) {
+          await container.requestFullscreen();
+        } else if (container.webkitRequestFullscreen) {
+          await container.webkitRequestFullscreen();
+        }
         setIsFullscreen(true);
       } else {
-        await document.exitFullscreen();
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        } else if (doc.webkitExitFullscreen) {
+          await doc.webkitExitFullscreen();
+        }
         setIsFullscreen(false);
       }
     } catch (err) {
@@ -499,12 +579,21 @@ export function PdfReader({
 
   React.useEffect(() => {
     const onFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
+      const doc = document as Document & { webkitFullscreenElement?: Element };
+      const isNowFullscreen = !!(document.fullscreenElement || doc.webkitFullscreenElement);
+      setIsFullscreen(isNowFullscreen);
+      updateContainerWidth();
+      setTimeout(updateContainerWidth, 50);
+      setTimeout(updateContainerWidth, 200);
     };
 
     document.addEventListener("fullscreenchange", onFullscreenChange);
-    return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
-  }, []);
+    document.addEventListener("webkitfullscreenchange", onFullscreenChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", onFullscreenChange);
+      document.removeEventListener("webkitfullscreenchange", onFullscreenChange);
+    };
+  }, [updateContainerWidth]);
 
   // 6. Keyboard Navigation & Shortcuts
   React.useEffect(() => {
@@ -558,7 +647,7 @@ export function PdfReader({
       ref={containerRef}
       className={`w-full flex flex-col transition-colors duration-200 ${
         isFullscreen
-          ? "fixed inset-0 z-50 bg-background overflow-hidden p-3"
+          ? "fixed inset-0 z-50 bg-background overflow-hidden p-0 sm:p-1 h-screen max-h-screen"
           : "relative space-y-4"
       }`}
     >
@@ -581,7 +670,11 @@ export function PdfReader({
 
       {/* 3. Active PDF Canvas Reader */}
       {!isLoading && !error && pdfDoc && (
-        <div className="w-full flex flex-col items-center space-y-4">
+        <div
+          className={`w-full flex flex-col items-center ${
+            isFullscreen ? "h-full flex-1 gap-1.5 min-h-0" : "space-y-4"
+          }`}
+        >
           {/* Reader Top Navigation & Toolbar */}
           <ReaderToolbar
             currentPage={currentPage}
@@ -608,10 +701,20 @@ export function PdfReader({
           {/* Canvas Scroll & Viewport Area */}
           <div
             ref={scrollAreaRef}
-            className="w-full overflow-auto max-h-[82vh] py-4 sm:py-6 px-1 sm:px-4 flex justify-center rounded-2xl border border-border/40 bg-muted/20 dark:bg-muted/10 backdrop-blur-sm custom-scrollbar"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            className={`w-full overflow-auto custom-scrollbar ${
+              isFullscreen
+                ? "flex-1 h-full min-h-0 p-0 sm:p-1 flex justify-center bg-background border-0 rounded-none"
+                : "max-h-[82vh] py-4 sm:py-6 px-1 sm:px-4 flex justify-center rounded-2xl border border-border/40 bg-muted/20 dark:bg-muted/10 backdrop-blur-sm"
+            }`}
             tabIndex={0}
             role="region"
             aria-label={`${bookTitle} - রিডিং ক্যানভাস এলাকা`}
+            style={{
+              touchAction: userZoom > 1.05 ? "pan-x pan-y" : "pan-y",
+            }}
           >
             <PdfPage
               pdfDoc={pdfDoc}
