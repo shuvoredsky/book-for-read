@@ -706,8 +706,8 @@ export function PdfReader({
             onTouchEnd={handleTouchEnd}
             className={`w-full overflow-auto custom-scrollbar ${
               isFullscreen
-                ? "flex-1 h-full min-h-0 p-0 sm:p-1 flex justify-center bg-background border-0 rounded-none"
-                : "max-h-[82vh] py-4 sm:py-6 px-1 sm:px-4 flex justify-center rounded-2xl border border-border/40 bg-muted/20 dark:bg-muted/10 backdrop-blur-sm"
+                ? "flex-1 h-full min-h-0 p-0 sm:p-1 bg-background border-0 rounded-none"
+                : "max-h-[82vh] py-4 sm:py-6 px-1 sm:px-4 rounded-2xl border border-border/40 bg-muted/20 dark:bg-muted/10 backdrop-blur-sm"
             }`}
             tabIndex={0}
             role="region"
@@ -716,17 +716,19 @@ export function PdfReader({
               touchAction: userZoom > 1.05 ? "pan-x pan-y" : "pan-y",
             }}
           >
-            <PdfPage
-              pdfDoc={pdfDoc}
-              pageNumber={currentPage}
-              scale={effectiveScale}
-              userWatermark={userWatermark}
-              onPageDimensions={handlePageDimensions}
-              onRenderError={(err) => {
-                console.error("Page render error:", err);
-                toast.error(`পৃষ্ঠা ${currentPage} রেন্ডার করতে সমস্যা হয়েছে`);
-              }}
-            />
+            <div className="min-w-full w-fit flex justify-center">
+              <PdfPage
+                pdfDoc={pdfDoc}
+                pageNumber={currentPage}
+                scale={effectiveScale}
+                userWatermark={userWatermark}
+                onPageDimensions={handlePageDimensions}
+                onRenderError={(err) => {
+                  console.error("Page render error:", err);
+                  toast.error(`পৃষ্ঠা ${currentPage} রেন্ডার করতে সমস্যা হয়েছে`);
+                }}
+              />
+            </div>
           </div>
 
           {/* Table of Contents Drawer */}
