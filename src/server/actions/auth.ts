@@ -2,6 +2,7 @@
 
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
+import { verifyPassword } from "better-auth/crypto";
 import prisma from "@/lib/prisma";
 import { registerSchema, loginSchema, type RegisterInput, type LoginInput } from "@/lib/validations/auth";
 import type { ActionResponse, SafeUser } from "@/types";
@@ -88,7 +89,7 @@ export async function registerUserAction(
 
 export async function loginUserAction(
   data: LoginInput
-): Promise<ActionResponse<{ redirectUrl: string }>> {
+): Promise<ActionResponse<{ redirectUrl?: string; existingSessionDetected?: boolean; message?: string }>> {
   try {
     const parsed = loginSchema.safeParse(data);
     if (!parsed.success) {
@@ -98,22 +99,89 @@ export async function loginUserAction(
       };
     }
 
-    const { email, password } = parsed.data;
+    const { email, password, forceLogin } = parsed.data;
     const cleanEmail = email.toLowerCase().trim();
 
-    // Check if account exists and status is active
+    // 1. Check if user exists
     const user = await prisma.user.findUnique({
       where: { email: cleanEmail },
       select: { id: true, role: true, status: true },
     });
 
-    if (user && user.status === "SUSPENDED") {
+    if (!user) {
+      return {
+        success: false,
+        error: "ইমেইল অথবা পাসওয়ার্ড সঠিক নয়।",
+      };
+    }
+
+    if (user.status === "SUSPENDED") {
       return {
         success: false,
         error: "আপনার একাউন্টটি সাময়িকভাবে স্থগিত করা হয়েছে। সাপোর্টে যোগাযোগ করুন।",
       };
     }
 
+    // 2. Validate password against Account credential
+    const account = await prisma.account.findFirst({
+      where: { userId: user.id },
+      select: { password: true },
+    });
+
+    if (!account?.password) {
+      return {
+        success: false,
+        error: "ইমেইল অথবা পাসওয়ার্ড সঠিক নয়।",
+      };
+    }
+
+    const isPasswordValid = await verifyPassword({
+      hash: account.password,
+      password,
+    });
+
+    if (!isPasswordValid) {
+      return {
+        success: false,
+        error: "ইমেইল অথবা পাসওয়ার্ড সঠিক নয়।",
+      };
+    }
+
+    // 3. Single-Device Check: Check for existing active sessions in database
+    const now = new Date();
+    const existingSessions = await prisma.session.findMany({
+      where: {
+        userId: user.id,
+        expiresAt: { gt: now },
+      },
+      select: { id: true },
+    });
+
+    // If active session exists and user has NOT explicitly confirmed force login:
+    if (existingSessions.length > 0 && !forceLogin) {
+      return {
+        success: true,
+        data: {
+          existingSessionDetected: true,
+          message:
+            "আপনার অ্যাকাউন্ট অন্য একটি ডিভাইসে সক্রিয় আছে। এখানে লগইন করতে চাইলে আগের ডিভাইস থেকে স্বয়ংক্রিয়ভাবে লগআউট হয়ে যাবে। আপনি কি চালিয়ে যেতে চান?",
+        },
+      };
+    }
+
+    // 4. Invalidate all existing sessions for this user (both Session and DeviceSession tables)
+    if (existingSessions.length > 0) {
+      await prisma.$transaction([
+        prisma.session.deleteMany({
+          where: { userId: user.id },
+        }),
+        prisma.deviceSession.deleteMany({
+          where: { userId: user.id },
+        }),
+      ]);
+    }
+
+    // 5. Sign in user via Better Auth API and issue new session cookie
     const reqHeaders = await headers();
     const res = await auth.api.signInEmail({
       headers: reqHeaders,
@@ -126,15 +194,40 @@ export async function loginUserAction(
     if (!res || !res.user) {
       return {
         success: false,
-        error: "ইমেইল অথবা পাসওয়ার্ড সঠিক নয়।",
+        error: "লগইন প্রক্রিয়া সম্পন্ন করা যায়নি। আবার চেষ্টা করুন।",
       };
     }
 
-    const redirectUrl = user?.role === "ADMIN" ? "/admin" : "/dashboard";
+    // 6. Record DeviceSession for active device tracking
+    try {
+      const userAgent = reqHeaders.get("user-agent") || undefined;
+      const ipAddress =
+        reqHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+        reqHeaders.get("x-real-ip") ||
+        undefined;
+
+      await prisma.deviceSession.create({
+        data: {
+          userId: user.id,
+          deviceId: `dev_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+          deviceName: userAgent ? userAgent.substring(0, 100) : "Web Browser",
+          userAgent,
+          ipAddress,
+          lastActiveAt: new Date(),
+        },
+      });
+    } catch {
+      // Non-critical device session logging fallback
+    }
+
+    const redirectUrl = user.role === "ADMIN" ? "/admin" : "/dashboard";
 
     return {
       success: true,
-      data: { redirectUrl },
+      data: {
+        redirectUrl,
+        existingSessionDetected: false,
+      },
     };
   } catch (error: unknown) {
     console.error("Login action error:", error);

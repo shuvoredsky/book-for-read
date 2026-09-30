@@ -3,13 +3,22 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BookOpen, LogIn, Lock, Mail, Loader2, AlertCircle, MessageCircle } from "lucide-react";
+import { BookOpen, LogIn, Mail, Loader2, AlertCircle, MessageCircle, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 import { loginUserAction } from "@/server/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { siteConfig } from "@/config/site";
 
 export default function LoginPage() {
@@ -17,6 +26,8 @@ export default function LoginPage() {
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
+  const [isForceLoggingIn, setIsForceLoggingIn] = React.useState(false);
+  const [showSessionModal, setShowSessionModal] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,10 +53,12 @@ export default function LoginPage() {
             "ইমেইল অথবা পাসওয়ার্ড সঠিক নয়। আবার চেষ্টা করুন।"
         );
         toast.error("লগইন ব্যর্থ হয়েছে");
+      } else if (result.data?.existingSessionDetected) {
+        // Detected existing active session on another device -> show prompt
+        setShowSessionModal(true);
       } else {
         toast.success("সফলভাবে লগইন হয়েছে!");
-        router.push(result.data?.redirectUrl || "/dashboard");
-        router.refresh();
+        window.location.href = result.data?.redirectUrl || "/dashboard";
       }
     } catch (err: unknown) {
       console.error("Login error:", err);
@@ -54,6 +67,41 @@ export default function LoginPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleConfirmForceLogin = async () => {
+    setIsForceLoggingIn(true);
+    setErrorMessage(null);
+
+    try {
+      const result = await loginUserAction({
+        email: email.toLowerCase().trim(),
+        password,
+        forceLogin: true,
+      });
+
+      if (!result.success) {
+        setErrorMessage(result.error || "লগইন ব্যর্থ হয়েছে।");
+        toast.error("লগইন ব্যর্থ হয়েছে");
+        setShowSessionModal(false);
+      } else {
+        toast.success("আগের ডিভাইস থেকে লগআউট করে সফলভাবে লগইন হয়েছে!");
+        setShowSessionModal(false);
+        window.location.href = result.data?.redirectUrl || "/dashboard";
+      }
+    } catch (err: unknown) {
+      console.error("Force login error:", err);
+      setErrorMessage("সার্ভারের সাথে সংযোগ স্থাপন করা সম্ভব হয়নি।");
+      toast.error("লগইন ত্রুটি");
+    } finally {
+      setIsForceLoggingIn(false);
+    }
+  };
+
+  const handleCancelSessionModal = () => {
+    setShowSessionModal(false);
+    setIsLoading(false);
+    toast.info("লগইন বাতিল করা হয়েছে");
   };
 
   return (
@@ -120,19 +168,14 @@ export default function LoginPage() {
                   পাসওয়ার্ড (Password)
                 </Label>
               </div>
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10"
-                  required
-                  disabled={isLoading}
-                />
-              </div>
+              <PasswordInput
+                id="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={isLoading}
+              />
             </div>
           </CardContent>
 
@@ -189,6 +232,53 @@ export default function LoginPage() {
       >
         <span>← মূল পাতায় ফিরে যান</span>
       </Link>
+
+      {/* Active Device Session Confirmation Dialog */}
+      <Dialog open={showSessionModal} onOpenChange={(open) => !open && handleCancelSessionModal()}>
+        <DialogContent className="sm:max-w-md glass-card border-amber-500/30 shadow-2xl">
+          <DialogHeader className="space-y-3 text-center sm:text-left">
+            <div className="mx-auto sm:mx-0 w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
+              <Smartphone className="h-6 w-6" />
+            </div>
+            <DialogTitle className="text-lg font-bold text-foreground">
+              অন্য ডিভাইসে সক্রিয় একাউন্ট সনাক্ত হয়েছে
+            </DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              আপনার অ্যাকাউন্ট অন্য একটি ডিভাইসে সক্রিয় আছে। এখানে লগইন করতে চাইলে আগের ডিভাইস থেকে স্বয়ংক্রিয়ভাবে লগআউট হয়ে যাবে। আপনি কি চালিয়ে যেতে চান?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCancelSessionModal}
+              disabled={isForceLoggingIn}
+              className="w-full sm:w-auto text-xs"
+            >
+              বাতিল করুন
+            </Button>
+            <Button
+              type="button"
+              variant="gradient"
+              onClick={handleConfirmForceLogin}
+              disabled={isForceLoggingIn}
+              className="w-full sm:w-auto text-xs font-semibold gap-1.5"
+            >
+              {isForceLoggingIn ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  প্রক্রিয়াকরণ হচ্ছে...
+                </>
+              ) : (
+                <>
+                  <LogIn className="h-3.5 w-3.5" />
+                  হ্যাঁ, এখানে লগইন করুন
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

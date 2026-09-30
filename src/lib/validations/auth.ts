@@ -20,6 +20,7 @@ export const registerSchema = z.object({
 export const loginSchema = z.object({
   email: z.string().email("সঠিক ইমেইল ঠিকানা প্রদান করুন"),
   password: z.string().min(6, "পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে"),
+  forceLogin: z.boolean().optional(),
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>;
