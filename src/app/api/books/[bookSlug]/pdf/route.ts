@@ -50,7 +50,7 @@ export async function GET(
   // 3. Verify active Book
   const book = await prisma.book.findUnique({
     where: { slug: cleanSlug },
-    select: { id: true, title: true, r2ObjectKey: true, isActive: true },
+    select: { id: true, title: true, r2ObjectKey: true, isActive: true, updatedAt: true, totalPages: true },
   });
 
   if (!book || !book.isActive) {
@@ -72,7 +72,29 @@ export async function GET(
     return new NextResponse("Forbidden: Book access not granted or revoked", { status: 403 });
   }
 
-  // 5. Retrieve PDF bytes via server-side cache and private B2 vault
+  // 5. Generate ETag based on book entity version & timestamp (changes when re-uploaded via admin)
+  const etag = `"${book.id}-${book.updatedAt.getTime()}-${book.totalPages}"`;
+  const ifNoneMatch = request.headers.get("if-none-match");
+
+  // If client's cached ETag matches current version and user is strictly authorized -> 304 Not Modified
+  if (ifNoneMatch) {
+    const clientTags = ifNoneMatch.split(",").map((t) => t.trim());
+    const isMatched = clientTags.some(
+      (tag) => tag === etag || tag === `W/${etag}` || tag === etag.replace(/^"|"$/g, "") || tag === "*"
+    );
+
+    if (isMatched) {
+      return new NextResponse(null, {
+        status: 304,
+        headers: {
+          "ETag": etag,
+          "Cache-Control": "private, max-age=3600, must-revalidate",
+        },
+      });
+    }
+  }
+
+  // 6. Retrieve PDF bytes via server-side cache and private B2 vault
   try {
     const objectKey = book.r2ObjectKey || "books/medical-book.pdf";
     const pdfBuffer = await getProtectedPdfBuffer(objectKey);
@@ -87,9 +109,8 @@ export async function GET(
         "Content-Type": "application/pdf",
         "Content-Length": pdfBuffer.length.toString(),
         "Content-Disposition": `inline; filename="${cleanSlug}.pdf"`,
-        "Cache-Control": "private, no-cache, no-store, must-revalidate",
-        "Pragma": "no-cache",
-        "Expires": "0",
+        "Cache-Control": "private, max-age=3600, must-revalidate",
+        "ETag": etag,
       },
     });
   } catch (error: unknown) {
@@ -131,7 +152,7 @@ export async function HEAD(
 
   const book = await prisma.book.findUnique({
     where: { slug: cleanSlug },
-    select: { id: true, r2ObjectKey: true, isActive: true },
+    select: { id: true, r2ObjectKey: true, isActive: true, updatedAt: true, totalPages: true },
   });
 
   if (!book || !book.isActive) {
@@ -152,6 +173,26 @@ export async function HEAD(
     return new NextResponse(null, { status: 403 });
   }
 
+  const etag = `"${book.id}-${book.updatedAt.getTime()}-${book.totalPages}"`;
+  const ifNoneMatch = request.headers.get("if-none-match");
+
+  if (ifNoneMatch) {
+    const clientTags = ifNoneMatch.split(",").map((t) => t.trim());
+    const isMatched = clientTags.some(
+      (tag) => tag === etag || tag === `W/${etag}` || tag === etag.replace(/^"|"$/g, "") || tag === "*"
+    );
+
+    if (isMatched) {
+      return new NextResponse(null, {
+        status: 304,
+        headers: {
+          "ETag": etag,
+          "Cache-Control": "private, max-age=3600, must-revalidate",
+        },
+      });
+    }
+  }
+
   try {
     const objectKey = book.r2ObjectKey || "books/medical-book.pdf";
     const pdfBuffer = await getProtectedPdfBuffer(objectKey);
@@ -161,7 +202,8 @@ export async function HEAD(
       headers: {
         "Content-Type": "application/pdf",
         "Content-Length": pdfBuffer.length.toString(),
-        "Cache-Control": "private, no-cache, no-store, must-revalidate",
+        "Cache-Control": "private, max-age=3600, must-revalidate",
+        "ETag": etag,
       },
     });
   } catch {
