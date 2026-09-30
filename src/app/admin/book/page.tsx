@@ -20,7 +20,7 @@ export default async function AdminBookPage() {
   });
 
   const currentObjectKey = book?.r2ObjectKey || siteConfig.book.r2ObjectKey || "books/medical-book.pdf";
-  const totalPages = book?.totalPages || siteConfig.book.totalPages || 384;
+  const totalPages = book?.totalPages || siteConfig.book.totalPages || 379;
   const bookTitle = book?.title || siteConfig.book.title;
   const bookPrice = book?.price ?? siteConfig.book.price;
   const isActive = book?.isActive ?? true;

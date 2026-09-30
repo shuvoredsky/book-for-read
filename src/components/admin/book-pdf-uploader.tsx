@@ -188,7 +188,7 @@ export function BookPdfUploader({
                 value={pagesCount}
                 onChange={(e) => setPagesCount(e.target.value)}
                 disabled={isLoading}
-                placeholder="384"
+                placeholder="379"
                 className="text-xs font-mono"
               />
             </div>

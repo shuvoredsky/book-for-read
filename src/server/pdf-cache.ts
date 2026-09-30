@@ -77,3 +77,24 @@ export async function getProtectedPdfBuffer(objectKey: string): Promise<Buffer> 
 
   throw new Error("PDF data could not be retrieved from private storage or server cache.");
 }
+
+/**
+ * Invalidates / clears the in-memory PDF cache.
+ * @param objectKey Optional specific object key to delete, or clears all cached PDFs if omitted.
+ */
+export function clearPdfCache(objectKey?: string): void {
+  if (objectKey) {
+    memoryCache.delete(objectKey);
+  } else {
+    memoryCache.clear();
+  }
+}
+
+/**
+ * Updates the in-memory cache directly with new PDF buffer data.
+ */
+export function setCachedPdf(objectKey: string, buffer: Buffer): void {
+  const cacheKey = objectKey || "books/medical-book.pdf";
+  memoryCache.set(cacheKey, { buffer, cachedAt: Date.now() });
+}
+

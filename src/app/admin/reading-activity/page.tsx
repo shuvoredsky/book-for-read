@@ -175,7 +175,7 @@ export default async function AdminReadingActivityPage() {
               ) : (
                 progressList.map((item) => {
                   const pct = +item.progressPercentage.toFixed(1);
-                  const total = item.totalPages || item.book.totalPages || 384;
+                  const total = item.totalPages || item.book.totalPages || 379;
 
                   return (
                     <tr key={item.id} className="hover:bg-muted/30 transition-colors">

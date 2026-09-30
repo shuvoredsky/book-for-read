@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   LogOut,
   BookOpen,
@@ -27,15 +26,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export function UserNav() {
-  const router = useRouter();
   const { data: session, isPending } = useSession();
 
   const handleSignOut = async () => {
     try {
       await signOut();
       toast.success("সফলভাবে লগআউট হয়েছে");
-      router.push("/");
-      router.refresh();
+      window.location.href = "/";
     } catch {
       toast.error("লগআউট করতে সমস্যা হয়েছে");
     }

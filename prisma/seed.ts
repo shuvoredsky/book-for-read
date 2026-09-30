@@ -14,7 +14,7 @@ async function main() {
       description:
         "১২১ দিনের মেডিকেল যাত্রা - লেখক: Shuvo Chakrabrati। শিক্ষণীয় ডিজিটাল মেডিকেল গাইডবুক।",
       price: 100,
-      totalPages: 384,
+      totalPages: 379,
       isActive: true,
     },
     create: {
@@ -24,7 +24,7 @@ async function main() {
         "১২১ দিনের মেডিকেল যাত্রা - লেখক: Shuvo Chakrabrati। শিক্ষণীয় ডিজিটাল মেডিকেল গাইডবুক।",
       price: 100,
       r2ObjectKey: "books/121_days_medical_book.pdf",
-      totalPages: 384,
+      totalPages: 379,
       isActive: true,
     },
   });

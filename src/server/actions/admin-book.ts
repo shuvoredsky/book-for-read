@@ -1,9 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import * as fs from "fs";
+import * as path from "path";
 import { requireAdmin } from "@/server/auth";
 import prisma from "@/lib/prisma";
 import { uploadPdfToB2 } from "@/lib/b2";
+import { clearPdfCache, setCachedPdf } from "@/server/pdf-cache";
 import type { ActionResponse } from "@/types";
 
 export async function uploadBookPdfAction(
@@ -65,8 +68,23 @@ export async function uploadBookPdfAction(
       };
     }
 
-    // 6. Update Book record in Prisma
-    const totalPages = totalPagesStr ? parseInt(totalPagesStr, 10) : 384;
+    // 6. Invalidate server-side in-memory PDF cache & update with new buffer
+    clearPdfCache();
+    setCachedPdf(targetObjectKey, buffer);
+
+    // Also update local fallback storage on disk if present
+    try {
+      const privateDir = path.join(process.cwd(), "storage", "private-pdf");
+      if (!fs.existsSync(privateDir)) {
+        fs.mkdirSync(privateDir, { recursive: true });
+      }
+      fs.writeFileSync(path.join(privateDir, "medical-book-optimized.pdf"), buffer);
+    } catch {
+      // Non-critical local write fallback
+    }
+
+    // 7. Update Book record in Prisma
+    const totalPages = totalPagesStr ? parseInt(totalPagesStr, 10) : 379;
 
     const updatedBook = await prisma.book.upsert({
       where: { slug: "medical-handbook" },
@@ -81,12 +99,12 @@ export async function uploadBookPdfAction(
           "১২১ দিনের মেডিকেল যাত্রা - লেখক: Shuvo Chakrabrati। শিক্ষণীয় ডিজিটাল মেডিকেল গাইডবুক।",
         price: 100,
         r2ObjectKey: targetObjectKey,
-        totalPages: totalPages || 384,
+        totalPages: totalPages || 379,
         isActive: true,
       },
     });
 
-    // 7. Record Audit Log
+    // 8. Record Audit Log
     await prisma.auditLog.create({
       data: {
         adminId: admin.id,
@@ -96,6 +114,7 @@ export async function uploadBookPdfAction(
           objectKey: targetObjectKey,
           fileName: file.name,
           fileSize: file.size,
+          totalPages: totalPages || 379,
           storage: "Backblaze B2",
         },
       },

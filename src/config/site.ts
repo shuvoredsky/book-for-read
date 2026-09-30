@@ -13,7 +13,7 @@ export const siteConfig = {
     price: 100, // 100 BDT as per specification
     currency: "BDT",
     slug: "medical-handbook",
-    totalPages: 384,
+    totalPages: 379,
     r2ObjectKey: "books/121_days_medical_book.pdf",
     description:
       "মানবদেহের গঠন ও কার্যপ্রণালীর চমকপ্রদ ব্যাখ্যা এবং শিক্ষণীয় অন্তর্দৃষ্টি নিয়ে রচিত পূর্ণাঙ্গ ডিজিটাল বই।",
